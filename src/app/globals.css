@@ -1,26 +1,226 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 120 5% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 120 5% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 120 5% 15%;
+    --primary: 120 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 120 20% 95%;
+    --secondary-foreground: 120 5% 15%;
+    --muted: 120 20% 95%;
+    --muted-foreground: 120 5% 40%;
+    --accent: 120 100% 90%;
+    --accent-foreground: 120 5% 15%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 120 20% 90%;
+    --input: 120 20% 90%;
+    --ring: 120 100% 50%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 120 5% 8%;
+    --foreground: 120 20% 95%;
+    --card: 120 5% 10%;
+    --card-foreground: 120 20% 95%;
+    --popover: 120 5% 10%;
+    --popover-foreground: 120 20% 95%;
+    --primary: 120 100% 60%;
+    --primary-foreground: 120 5% 8%;
+    --secondary: 120 5% 15%;
+    --secondary-foreground: 120 20% 95%;
+    --muted: 120 5% 15%;
+    --muted-foreground: 120 5% 60%;
+    --accent: 120 5% 15%;
+    --accent-foreground: 120 20% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 120 20% 95%;
+    --border: 120 5% 15%;
+    --input: 120 5% 15%;
+    --ring: 120 100% 60%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom styles for the loan application */
+.loan-calculator {
+  @apply bg-gradient-to-br from-lime-50 via-white to-lime-100 rounded-2xl p-8 shadow-xl border border-lime-200;
+}
+
+.loan-card {
+  @apply bg-white rounded-2xl shadow-lg border border-lime-200 p-8 hover:shadow-xl hover:scale-105 transition-all duration-300;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800 border-yellow-300 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-approved {
+  @apply bg-lime-100 text-lime-800 border-lime-300 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-disbursed {
+  @apply bg-emerald-100 text-emerald-800 border-emerald-300 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-repaid {
+  @apply bg-gray-100 text-gray-800 border-gray-300 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-overdue {
+  @apply bg-red-100 text-red-800 border-red-300 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+/* Beautiful gradient backgrounds */
+.hero-gradient {
+  @apply bg-gradient-to-br from-lime-400 via-lime-500 to-emerald-500;
+}
+
+.card-gradient {
+  @apply bg-gradient-to-br from-white to-lime-50;
+}
+
+.nav-gradient {
+  @apply bg-gradient-to-r from-lime-500 to-emerald-500;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-lime-500 to-emerald-500 hover:from-lime-600 hover:to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300;
+}
+
+.btn-secondary {
+  @apply bg-white border-2 border-lime-500 text-lime-600 hover:bg-lime-500 hover:text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300;
+}
+
+/* Form styles */
+.form-input {
+  @apply w-full px-4 py-3 rounded-xl border-2 border-lime-200 focus:border-lime-500 focus:ring-2 focus:ring-lime-200 transition-all duration-300;
+}
+
+.form-label {
+  @apply block text-sm font-semibold text-gray-700 mb-2;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply hover:shadow-2xl hover:-translate-y-2 transition-all duration-500;
+}
+
+/* Text gradients */
+.text-gradient {
+  @apply bg-gradient-to-r from-lime-600 to-emerald-600 bg-clip-text text-transparent;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .loan-calculator {
+    @apply p-6;
+  }
+  
+  .loan-card {
+    @apply p-6;
+  }
+  
+  .btn-primary, .btn-secondary {
+    @apply py-2 px-4 text-sm;
+  }
+}
+
+/* Additional beautiful enhancements */
+.glass-effect {
+  @apply bg-white/10 backdrop-blur-md border border-white/20;
+}
+
+.floating-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.gradient-text-animated {
+  background: linear-gradient(-45deg, #84cc16, #22c55e, #16a34a, #15803d);
+  background-size: 400% 400%;
+  animation: gradientShift 3s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.shimmer-effect {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.parallax-bg {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Enhanced card hover effects */
+.enhanced-card {
+  @apply relative overflow-hidden;
+}
+
+.enhanced-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.enhanced-card:hover::before {
+  left: 100%;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #84cc16, #22c55e);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #65a30d, #16a34a);
 }
