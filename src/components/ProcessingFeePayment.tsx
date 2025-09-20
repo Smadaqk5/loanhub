@@ -15,7 +15,7 @@ import {
   Clock,
   XCircle
 } from 'lucide-react'
-import { pesapalService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-service-mock'
+import { pesapalService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-service-prod'
 import toast from 'react-hot-toast'
 
 const processingFeeSchema = z.object({

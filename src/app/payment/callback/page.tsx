@@ -13,7 +13,7 @@ import {
   ArrowLeft,
   Loader2
 } from 'lucide-react'
-import { pesapalService } from '@/lib/pesapal-service-mock'
+import { pesapalService } from '@/lib/pesapal-service-prod'
 import toast from 'react-hot-toast'
 
 function PaymentCallbackContent() {

@@ -42,7 +42,7 @@ class ProductionPesapalService {
   constructor() {
     // Production credentials from environment variables
     this.baseUrl = process.env.NEXT_PUBLIC_PESAPAL_BASE_URL || 'https://www.pesapal.com/pesapalapi/api'
-    this.consumerKey = process.env.NEXT_PUBLIC_PESAPAL_CONSUMER_KEY || ''
+    this.consumerKey = process.env.PESAPAL_CONSUMER_KEY || ''
     this.consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || ''
   }
 
@@ -142,53 +142,31 @@ class ProductionPesapalService {
    */
   async initiateSTKPush(paymentRequest: PaymentRequest): Promise<PaymentResponse> {
     try {
-      const token = await this.getAccessToken()
-      const merchantReference = this.generateMerchantReference('PROC')
-
-      const orderData = {
-        id: merchantReference,
-        currency: 'KES',
-        amount: paymentRequest.amount,
-        description: paymentRequest.description,
-        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/callback`,
-        notification_id: merchantReference,
-        billing_address: {
-          phone_number: paymentRequest.phoneNumber,
-          email_address: 'user@example.com',
-          country_code: 'KE',
-          first_name: 'User',
-          middle_name: '',
-          last_name: 'Name',
-          line_1: 'Nairobi, Kenya',
-          line_2: '',
-          city: 'Nairobi',
-          state: 'Nairobi',
-          postal_code: '',
-          zip_code: ''
-        }
-      }
-
-      const response = await fetch(`${this.baseUrl}/Transactions/SubmitOrderRequest`, {
+      const response = await fetch('/.netlify/functions/stk-push', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify({
+          phoneNumber: paymentRequest.phoneNumber,
+          amount: paymentRequest.amount,
+          description: paymentRequest.description,
+          paymentMethod: paymentRequest.paymentMethod,
+        }),
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'STK Push failed')
       }
 
-      const data = await response.json()
+      const result = await response.json()
 
       // Store payment data in localStorage for tracking
       const paymentData = {
-        paymentId: merchantReference,
-        orderTrackingId: data.order_tracking_id,
+        paymentId: result.paymentId,
+        orderTrackingId: result.orderTrackingId,
+        merchantReference: result.merchantReference,
         amount: paymentRequest.amount,
         phoneNumber: paymentRequest.phoneNumber,
         paymentMethod: paymentRequest.paymentMethod,
@@ -198,18 +176,17 @@ class ProductionPesapalService {
         initiatedAt: new Date().toISOString()
       }
 
-      localStorage.setItem(`payment_${merchantReference}`, JSON.stringify(paymentData))
+      localStorage.setItem(`payment_${result.merchantReference}`, JSON.stringify(paymentData))
 
       return {
         success: true,
-        paymentId: merchantReference,
-        orderTrackingId: data.order_tracking_id,
-        merchantReference: merchantReference,
-        redirectUrl: data.redirect_url,
-        message: 'STK Push initiated successfully. Please check your phone and enter your PIN.'
+        paymentId: result.paymentId,
+        orderTrackingId: result.orderTrackingId,
+        merchantReference: result.merchantReference,
+        message: result.message || 'STK Push initiated successfully. Please check your phone and enter your PIN.'
       }
-
     } catch (error: any) {
+      console.error('STK Push error:', error)
       return {
         success: false,
         error: error.message || 'Failed to initiate STK Push payment'

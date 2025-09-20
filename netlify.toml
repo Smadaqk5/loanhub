@@ -24,16 +24,22 @@
   to = "/index.html"
   status = 200
 
-# Pesapal callback redirects (for future backend integration)
-# [[redirects]]
-#   from = "/pesapal/callback"
-#   to = "/.netlify/functions/pesapal-callback"
-#   status = 200
+# Pesapal API redirects
+[[redirects]]
+  from = "/api/pesapal/stk-push"
+  to = "/.netlify/functions/stk-push"
+  status = 200
 
-# [[redirects]]
-#   from = "/pesapal/ipn"
-#   to = "/.netlify/functions/pesapal-ipn"
-#   status = 200
+# Pesapal callback redirects
+[[redirects]]
+  from = "/pesapal/callback"
+  to = "/.netlify/functions/pesapal-callback"
+  status = 200
+
+[[redirects]]
+  from = "/pesapal/ipn"
+  to = "/.netlify/functions/pesapal-ipn"
+  status = 200
 
 # Security headers
 [[headers]]
