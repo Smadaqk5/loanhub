@@ -47,7 +47,7 @@ exports.handler = async (event, context) => {
     }
 
     // Get Pesapal credentials from environment variables
-    const baseUrl = process.env.NEXT_PUBLIC_PESAPAL_BASE_URL || 'https://www.pesapal.com/pesapalapi/api'
+    const baseUrl = process.env.NEXT_PUBLIC_PESAPAL_BASE_URL || 'https://pay.pesapal.com/v3/api'
     const consumerKey = process.env.PESAPAL_CONSUMER_KEY
     const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET
 
@@ -65,11 +65,12 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // Step 1: Get OAuth access token
+    // Step 1: Get OAuth access token (Pesapal v3)
     const tokenResponse = await fetch(`${baseUrl}/Auth/RequestToken`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         consumer_key: consumerKey,
@@ -78,13 +79,19 @@ exports.handler = async (event, context) => {
     })
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to get access token')
+      const errorText = await tokenResponse.text()
+      console.error('Token request failed:', errorText)
+      throw new Error(`Failed to get access token: ${errorText}`)
     }
 
     const tokenData = await tokenResponse.json()
     const accessToken = tokenData.token
 
-    // Step 2: Initiate STK Push
+    if (!accessToken) {
+      throw new Error('No access token received from Pesapal')
+    }
+
+    // Step 2: Initiate STK Push (Pesapal v3 format)
     const merchantReference = `PROC_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
     
     const stkPushData = {
@@ -110,10 +117,13 @@ exports.handler = async (event, context) => {
       },
     }
 
+    console.log('Sending STK Push request:', JSON.stringify(stkPushData, null, 2))
+
     const stkPushResponse = await fetch(`${baseUrl}/Transactions/SubmitOrderRequest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify(stkPushData),
@@ -121,10 +131,12 @@ exports.handler = async (event, context) => {
 
     if (!stkPushResponse.ok) {
       const errorText = await stkPushResponse.text()
+      console.error('STK Push request failed:', errorText)
       throw new Error(`STK Push failed: ${errorText}`)
     }
 
     const stkPushResult = await stkPushResponse.json()
+    console.log('STK Push response:', JSON.stringify(stkPushResult, null, 2))
 
     return {
       statusCode: 200,
