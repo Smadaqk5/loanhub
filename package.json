@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "netlify:build": "next build",
-    "netlify:dev": "netlify dev"
+    "netlify:dev": "netlify dev",
+    "build:production": "NODE_ENV=production next build",
+    "build:netlify": "npm ci && npm run build:production"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
