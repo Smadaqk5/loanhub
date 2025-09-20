@@ -263,7 +263,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <Link href={`/loans/${loan.id}`}>
+                      <Link href={`/loans/detail?id=${loan.id}`}>
                         <Button variant="outline" size="sm" className="w-full">
                           <Eye className="h-4 w-4 mr-2" />
                           View Details

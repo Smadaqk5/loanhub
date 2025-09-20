@@ -214,7 +214,7 @@ export default function LoansPage() {
                         <p className="text-sm text-gray-600">{loan.loan_purpose}</p>
                       </div>
                     </div>
-                    <Link href={`/loans/${loan.id}`}>
+                    <Link href={`/loans/detail?id=${loan.id}`}>
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4 mr-2" />
                         View Details

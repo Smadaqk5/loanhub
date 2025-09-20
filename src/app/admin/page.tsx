@@ -484,7 +484,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-600">{loan.loan_purpose}</span>
-                      <Link href={`/admin/loans/${loan.id}`}>
+                      <Link href={`/loans/detail?id=${loan.id}`}>
                         <Button size="sm" variant="outline">
                           View
                         </Button>
