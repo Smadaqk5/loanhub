@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { supabase, Loan } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/loan-calculator'
 
-export default function LoanDetailPage() {
+function LoanDetailContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { user } = useAuth()
@@ -288,5 +288,24 @@ export default function LoanDetailPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading loan details...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function LoanDetailPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <LoanDetailContent />
+    </Suspense>
   )
 }
