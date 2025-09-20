@@ -1,6 +1,6 @@
 [build]
   # Build command for Next.js with error handling
-  command = "npm install && npm run build"
+  command = "npm ci && npm run build"
   
   # Directory to publish (Next.js static export)
   publish = "out"
