@@ -8,9 +8,12 @@ import { z } from 'zod'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { LoanCalculator } from '@/components/LoanCalculator'
+import { ProcessingFeePayment } from '@/components/ProcessingFeePayment'
+import { RateDisplay } from '@/components/RateDisplay'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { calculateLoan, formatCurrency } from '@/lib/loan-calculator'
+import { systemSettingsService, SystemSettings } from '@/lib/system-settings'
 import { CreditCard, AlertCircle, CheckCircle } from 'lucide-react'
 
 const loanApplicationSchema = z.object({
@@ -27,14 +30,24 @@ export default function LoanApplicationPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [systemSettings, setSystemSettings] = useState({
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({
     processing_fee_percentage: 5.0,
     interest_rate_percentage: 15.0,
     max_loan_amount: 100000,
     min_loan_amount: 1000,
-    max_repayment_period_days: 365
+    max_repayment_period_days: 365,
+    late_payment_fee: 500,
+    extension_fee_percentage: 2.0,
+    auto_approval_threshold: 50000,
+    maintenance_mode: false,
+    email_notifications: true,
+    sms_notifications: true
   })
   const [calculation, setCalculation] = useState<any>(null)
+  const [showPaymentStep, setShowPaymentStep] = useState(false)
+  const [pendingLoanData, setPendingLoanData] = useState<any>(null)
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [showProcessingFeePayment, setShowProcessingFeePayment] = useState(false)
 
   const {
     register,
@@ -75,56 +88,99 @@ export default function LoanApplicationPage() {
 
   const fetchSystemSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('*')
-        .single()
-
-      if (error) throw error
-      if (data) {
-        setSystemSettings(data)
-      }
+      const settings = await systemSettingsService.getSettings()
+      setSystemSettings(settings)
     } catch (error) {
       console.error('Error fetching system settings:', error)
+      // Keep default settings if fetch fails
     }
   }
 
   const onSubmit = async (data: LoanApplicationForm) => {
-    if (!user) return
+    console.log('Form submitted with data:', data)
+    console.log('User:', user)
+    
+    if (!user) {
+      console.log('No user found, returning early')
+      setError('You must be logged in to apply for a loan')
+      return
+    }
 
     setIsSubmitting(true)
     setError('')
 
     try {
+      console.log('Calculating loan...')
       const calc = calculateLoan(
         data.amount,
         systemSettings.processing_fee_percentage,
         systemSettings.interest_rate_percentage,
         data.repayment_period_days
       )
+      console.log('Loan calculation result:', calc)
 
+      // Store the loan data for payment step
+      setPendingLoanData({
+        user_id: user.id,
+        amount_requested: data.amount,
+        processing_fee: calc.processingFee,
+        interest_rate: systemSettings.interest_rate_percentage,
+        net_disbursed: calc.netDisbursed,
+        total_repayment: calc.totalRepayment,
+        repayment_deadline: new Date(Date.now() + data.repayment_period_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        loan_purpose: data.loan_purpose,
+        calculation: calc
+      })
+
+      console.log('Setting payment step to true')
+      // Show processing fee payment step
+      setShowProcessingFeePayment(true)
+    } catch (err: any) {
+      console.error('Error in onSubmit:', err)
+      setError(err.message || 'An error occurred while processing your application')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handlePaymentSuccess = async (paymentData: any) => {
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      // Create the loan with processing fee paid status
       const { error: loanError } = await supabase
         .from('loans')
         .insert({
-          user_id: user.id,
-          amount_requested: data.amount,
-          processing_fee: calc.processingFee,
-          interest_rate: systemSettings.interest_rate_percentage,
-          net_disbursed: calc.netDisbursed,
-          total_repayment: calc.totalRepayment,
-          status: 'pending',
-          repayment_deadline: new Date(Date.now() + data.repayment_period_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          loan_purpose: data.loan_purpose,
+          ...pendingLoanData,
+          status: 'processing_fee_paid',
+          payment_method: paymentData.paymentMethod || 'mpesa',
+          processing_fee_paid_at: new Date().toISOString()
         })
 
       if (loanError) throw loanError
 
-      router.push('/dashboard?success=loan_applied')
+      // Reset payment states
+      setShowProcessingFeePayment(false)
+      setShowPaymentStep(false)
+      setPendingLoanData(null)
+
+      router.push('/dashboard?success=loan_applied&payment=success')
     } catch (err: any) {
-      setError(err.message || 'An error occurred while submitting your application')
+      setError(err.message || 'Failed to save loan application. Please contact support.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handlePaymentError = (error: string) => {
+    setError(error)
+    setShowProcessingFeePayment(false)
+  }
+
+  const handlePaymentCancel = () => {
+    setShowProcessingFeePayment(false)
+    setPendingLoanData(null)
   }
 
   if (loading) {
@@ -289,6 +345,14 @@ export default function LoanApplicationPage() {
           </p>
         </div>
 
+        {/* Current Rates Display */}
+        <div className="mb-8">
+          <RateDisplay 
+            processingFeePercentage={systemSettings.processing_fee_percentage}
+            interestRatePercentage={systemSettings.interest_rate_percentage}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Loan Application Form */}
           <div>
@@ -304,6 +368,14 @@ export default function LoanApplicationPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Debug Information */}
+                  <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-sm">
+                    <p className="text-blue-800 font-medium">Debug Info:</p>
+                    <p className="text-blue-700">User: {user ? `${(user as any).full_name || user.email} (${user.email})` : 'Not logged in'}</p>
+                    <p className="text-blue-700">Loading: {loading ? 'Yes' : 'No'}</p>
+                    <p className="text-blue-700">Is Submitting: {isSubmitting ? 'Yes' : 'No'}</p>
+                  </div>
+
                   {error && (
                     <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm flex items-center">
                       <AlertCircle className="h-4 w-4 mr-2" />
@@ -402,13 +474,36 @@ export default function LoanApplicationPage() {
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Submitting Application...' : 'Submit Application'}
-                  </Button>
+                  <div className="space-y-3">
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Submitting Application...' : 'Submit Application'}
+                    </Button>
+                    
+                    {/* Test Button for Debugging */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        console.log('Test button clicked')
+                        console.log('Current form values:', {
+                          amount: watch('amount'),
+                          repayment_period_days: watch('repayment_period_days'),
+                          loan_purpose: watch('loan_purpose'),
+                          terms_accepted: watch('terms_accepted')
+                        })
+                        console.log('Form errors:', errors)
+                        console.log('User:', user)
+                        console.log('System settings:', systemSettings)
+                      }}
+                    >
+                      🐛 Debug Form (Check Console)
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -457,6 +552,20 @@ export default function LoanApplicationPage() {
               </Card>
             )}
           </div>
+
+          {/* Processing Fee Payment Step */}
+          {showProcessingFeePayment && pendingLoanData && (
+            <div className="mt-8">
+              <ProcessingFeePayment
+                loanId={pendingLoanData.user_id} // Using user_id as loan identifier for now
+                userId={pendingLoanData.user_id}
+                processingFeeAmount={pendingLoanData.processing_fee}
+                onPaymentSuccess={handlePaymentSuccess}
+                onPaymentError={handlePaymentError}
+                onCancel={handlePaymentCancel}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

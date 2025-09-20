@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { mockAuth } from './mock-auth'
 
 export async function signUp(email: string, password: string, userData: {
   full_name: string
@@ -6,49 +7,25 @@ export async function signUp(email: string, password: string, userData: {
   phone_number: string
   kra_pin: string
 }) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: userData
-    }
-  })
-
-  if (error) throw error
-
-  // Create user profile in users table
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from('users')
-      .insert({
-        id: data.user.id,
-        full_name: userData.full_name,
-        national_id: userData.national_id,
-        phone_number: userData.phone_number,
-        email: email,
-        kra_pin: userData.kra_pin,
-        password_hash: '', // Supabase handles password hashing
-      })
-
-    if (profileError) throw profileError
-  }
-
-  return data
+  // Use mock auth for development
+  const session = await mockAuth.signUp(email, password, userData)
+  return { data: { session, user: session.user }, error: null }
 }
 
 export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) throw error
-  return data
+  try {
+    // Use mock auth for development
+    const session = await mockAuth.signIn(email, password)
+    return { data: { session, user: session.user }, error: null }
+  } catch (error: any) {
+    return { data: null, error: error }
+  }
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut()
-  if (error) throw error
+  // Use mock auth for development
+  await mockAuth.signOut()
+  return { error: null }
 }
 
 export async function resetPassword(email: string) {

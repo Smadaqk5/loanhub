@@ -1,0 +1,11 @@
+# Netlify redirects file
+
+# API redirects to Netlify Functions
+/api/* /.netlify/functions/:splat 200
+
+# Pesapal callback redirects
+/pesapal/callback /.netlify/functions/pesapal-callback 200
+/pesapal/ipn /.netlify/functions/pesapal-ipn 200
+
+# SPA routing - all other routes go to index.html
+/* /index.html 200

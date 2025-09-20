@@ -28,13 +28,20 @@ export interface Loan {
   id: string
   user_id: string
   amount_requested: number
+  amount_approved?: number
+  amount_disbursed?: number
   processing_fee: number
   interest_rate: number
   net_disbursed: number
   total_repayment: number
-  status: 'pending' | 'approved' | 'disbursed' | 'repaid' | 'overdue'
+  status: 'pending' | 'processing_fee_paid' | 'approved' | 'disbursed' | 'repaid' | 'overdue' | 'rejected'
   repayment_deadline: string
   loan_purpose: string
+  repayment_period_days?: number
+  payment_method?: string
+  processing_fee_paid_at?: string
+  approved_at?: string
+  disbursed_at?: string
   created_at: string
   updated_at?: string
 }

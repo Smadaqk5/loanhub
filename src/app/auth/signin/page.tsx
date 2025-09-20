@@ -34,19 +34,26 @@ export default function SignInPage() {
   })
 
   const onSubmit = async (data: SignInForm) => {
+    console.log('Sign in attempt with:', data.email)
     setIsLoading(true)
     setError('')
 
     try {
-      await signIn(data.email, data.password)
-      // Redirect to loan application or dashboard
-      const returnUrl = new URLSearchParams(window.location.search).get('returnUrl')
-      if (returnUrl) {
-        router.push(returnUrl)
-      } else {
-        router.push('/dashboard')
+      console.log('Calling signIn function...')
+      const result = await signIn(data.email, data.password)
+      console.log('Sign in result:', result)
+      
+      if (result.error) {
+        console.error('Sign in error:', result.error)
+        setError(result.error.message || 'Invalid email or password')
+        return
       }
+      
+      // Refresh auth state to ensure user is logged in
+      console.log('Reloading page...')
+      window.location.reload()
     } catch (err: any) {
+      console.error('Sign in error:', err)
       setError(err.message || 'Invalid email or password')
     } finally {
       setIsLoading(false)
@@ -148,6 +155,34 @@ export default function SignInPage() {
                 >
                   {isLoading ? 'Signing In...' : 'Sign In'}
                 </Button>
+              </div>
+
+              {/* Debug Section with Test Credentials */}
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <h3 className="text-sm font-medium text-blue-800 mb-2">🔐 Test Credentials</h3>
+                <div className="text-xs text-blue-700 space-y-1">
+                  <p><strong>Admin:</strong> admin@loanhubkenya.com / Admin123!</p>
+                  <p><strong>User 1:</strong> mary.wanjiku@email.com / Password123!</p>
+                  <p><strong>User 2:</strong> peter.kamau@email.com / Password123!</p>
+                  <p><strong>User 3:</strong> grace.akinyi@email.com / Password123!</p>
+                  <p><strong>User 4:</strong> david.otieno@email.com / Password123!</p>
+                </div>
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      console.log('Available test credentials:')
+                      console.log('Admin: admin@loanhubkenya.com / Admin123!')
+                      console.log('Users: mary.wanjiku@email.com, peter.kamau@email.com, grace.akinyi@email.com, david.otieno@email.com')
+                      console.log('All user passwords: Password123!')
+                    }}
+                  >
+                    🐛 Debug (Check Console)
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>

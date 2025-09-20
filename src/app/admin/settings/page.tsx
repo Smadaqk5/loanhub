@@ -15,20 +15,9 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { systemSettingsService, SystemSettings } from '@/lib/system-settings'
 
-interface SystemSettings {
-  processing_fee_percentage: number
-  interest_rate_percentage: number
-  max_loan_amount: number
-  min_loan_amount: number
-  max_repayment_period_days: number
-  late_payment_fee: number
-  extension_fee_percentage: number
-  auto_approval_threshold: number
-  maintenance_mode: boolean
-  email_notifications: boolean
-  sms_notifications: boolean
-}
+// Using SystemSettings interface from system-settings.ts
 
 export default function AdminSettingsPage() {
   const { user, isAdmin } = useAuth()
@@ -57,15 +46,8 @@ export default function AdminSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('*')
-        .single()
-
-      if (error) throw error
-      if (data) {
-        setSettings(data)
-      }
+      const settingsData = await systemSettingsService.getSettings()
+      setSettings(settingsData)
     } catch (error) {
       console.error('Error fetching settings:', error)
     } finally {
@@ -82,16 +64,23 @@ export default function AdminSettingsPage() {
     setSaved(false)
 
     try {
-      const { error } = await supabase
-        .from('system_settings')
-        .upsert(settings)
+      // Verify admin access before saving
+      if (!isAdmin) {
+        throw new Error('Only administrators can update system settings')
+      }
 
-      if (error) throw error
+      // Update settings using the service (which includes admin validation)
+      const success = await systemSettingsService.updateSettings(settings, isAdmin)
+      
+      if (!success) {
+        throw new Error('Failed to update settings')
+      }
 
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (error) {
       console.error('Error saving settings:', error)
+      alert('Error saving settings: ' + (error as Error).message)
     } finally {
       setIsSaving(false)
     }
@@ -243,7 +232,11 @@ export default function AdminSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Processing Fee (%)
+                      Processing Fee (%) 
+                      <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin Only
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -251,6 +244,7 @@ export default function AdminSettingsPage() {
                       value={settings.processing_fee_percentage}
                       onChange={(e) => handleInputChange('processing_fee_percentage', parseFloat(e.target.value))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      disabled={!isAdmin}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Deducted upfront from loan amount
@@ -260,6 +254,10 @@ export default function AdminSettingsPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Interest Rate (% per annum)
+                      <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin Only
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -267,6 +265,7 @@ export default function AdminSettingsPage() {
                       value={settings.interest_rate_percentage}
                       onChange={(e) => handleInputChange('interest_rate_percentage', parseFloat(e.target.value))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                      disabled={!isAdmin}
                     />
                   </div>
 

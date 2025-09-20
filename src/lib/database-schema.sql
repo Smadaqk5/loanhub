@@ -24,9 +24,11 @@ CREATE TABLE loans (
     interest_rate NUMERIC(5,2) NOT NULL CHECK (interest_rate >= 0),
     net_disbursed NUMERIC(10,2) NOT NULL CHECK (net_disbursed >= 0),
     total_repayment NUMERIC(10,2) NOT NULL CHECK (total_repayment >= 0),
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'disbursed', 'repaid', 'overdue')),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing_fee_paid', 'approved', 'disbursed', 'repaid', 'overdue', 'rejected')),
     repayment_deadline DATE NOT NULL,
     loan_purpose TEXT NOT NULL,
+    payment_method TEXT,
+    processing_fee_paid_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

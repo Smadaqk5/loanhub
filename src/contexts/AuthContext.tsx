@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   isAdmin: boolean
+  refreshAuth: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -64,11 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null)
         setIsAdmin(false)
       }
-      setLoading(false)
     }
 
-    // Check auth state periodically
-    const interval = setInterval(checkAuthState, 1000)
+    // Check auth state more frequently to catch login changes
+    const interval = setInterval(checkAuthState, 500)
 
     return () => clearInterval(interval)
   }, [])
@@ -80,12 +80,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAdmin(false)
   }
 
+  const refreshAuth = () => {
+    const currentUser = mockAuth.getUser()
+    if (currentUser) {
+      const currentSession = {
+        user: currentUser,
+        access_token: 'mock-token',
+        expires_at: Date.now() + (24 * 60 * 60 * 1000)
+      }
+      setSession(currentSession as any)
+      setUser(currentUser)
+      setIsAdmin(currentUser.role === 'admin')
+    } else {
+      setSession(null)
+      setUser(null)
+      setIsAdmin(false)
+    }
+  }
+
   const value = {
     user,
     session,
     loading,
     signOut,
     isAdmin,
+    refreshAuth,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

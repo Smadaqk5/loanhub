@@ -179,12 +179,57 @@ export default function AdminDashboardPage() {
   if (!user || !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">You don't have permission to access the admin dashboard.</p>
-          <Link href="/dashboard">
-            <Button>Go to Dashboard</Button>
-          </Link>
+        <div className="text-center max-w-md mx-auto p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Access Required</h1>
+          <p className="text-gray-600 mb-6">
+            {!user 
+              ? "Please sign in to access the admin dashboard." 
+              : "You need admin privileges to access this area."
+            }
+          </p>
+          
+          {/* Quick Sign In Options */}
+          <div className="space-y-3 mb-6">
+            {!user && (
+              <>
+                <p className="text-sm text-gray-500">Quick Sign In (Development):</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <Link href="/auth/signin">
+                    <Button className="w-full">Sign In with Email</Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={async () => {
+                      // Auto sign in with admin user
+                      const { mockAuth } = await import('@/lib/mock-auth')
+                      await mockAuth.signIn('admin@loanhubkenya.com', 'Admin123!')
+                      window.location.reload()
+                    }}
+                  >
+                    Quick Admin Demo
+                  </Button>
+                </div>
+                
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p><strong>Admin Credentials:</strong></p>
+                  <p>Email: admin@loanhubkenya.com</p>
+                  <p>Password: Admin123!</p>
+                </div>
+              </>
+            )}
+            
+            {user && !isAdmin && (
+              <div className="space-y-2">
+                <Link href="/dashboard">
+                  <Button className="w-full">Go to User Dashboard</Button>
+                </Link>
+                <p className="text-xs text-gray-500">
+                  Current user: {user.email} (User role)
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )

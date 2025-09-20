@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase, Loan } from '@/lib/supabase'
+import { DevCredentialsHelper } from '@/components/DevCredentialsHelper'
+import { mockAuth } from '@/lib/mock-auth'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -109,13 +111,26 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">Please sign in to access your dashboard.</p>
-          <Link href="/auth/signin">
-            <Button>Sign In</Button>
-          </Link>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Loan Hub</h1>
+            <p className="text-gray-600">Sign in to access your dashboard and manage your loans.</p>
+          </div>
+          
+          <DevCredentialsHelper 
+            onSignIn={async (email, password) => {
+              await mockAuth.signIn(email, password)
+            }}
+          />
+          
+          <div className="text-center">
+            <Link href="/auth/signin">
+              <Button variant="outline" className="w-full">
+                Manual Sign In
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
