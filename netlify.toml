@@ -1,6 +1,6 @@
 [build]
   # Build command for Next.js with error handling
-  command = "npm run build:netlify"
+  command = "npm install && npm run build"
   
   # Directory to publish (Next.js static export)
   publish = "out"
