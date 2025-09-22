@@ -84,10 +84,25 @@ export function URLOnlyPaymentForm({
       // Create payment URL with fallback to mock service
       let result: any
       try {
+        console.log('Attempting to create payment URL with real Pesapal service...')
         result = await pesapalURLService.createPaymentURL(paymentRequest)
+        console.log('Real Pesapal service result:', result)
+        
+        // If the real service fails, try mock service
+        if (!result.success) {
+          console.warn('Real Pesapal API failed, using mock service. Error:', result.error)
+          result = await mockPesapalURLService.createPaymentURL(paymentRequest)
+          console.log('Mock service result:', result)
+        }
       } catch (error) {
-        console.warn('Real Pesapal API failed, using mock service:', error)
-        result = await mockPesapalURLService.createPaymentURL(paymentRequest)
+        console.warn('Real Pesapal API threw exception, using mock service:', error)
+        try {
+          result = await mockPesapalURLService.createPaymentURL(paymentRequest)
+          console.log('Mock service result after exception:', result)
+        } catch (mockError) {
+          console.error('Both real and mock services failed:', mockError)
+          throw new Error('Payment service unavailable. Please try again later.')
+        }
       }
 
       if (!result.success) {

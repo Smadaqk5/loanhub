@@ -45,6 +45,11 @@ class PesapalURLService {
     this.baseUrl = 'https://cybqa.pesapal.com/pesapalv3/api'
     this.consumerKey = 'k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx'
     this.consumerSecret = 'Tjg4VodFyn1ur9aDMo1fsJvgHQQ='
+    
+    // Check if we should use mock service (for development)
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      console.log('Development environment detected - real Pesapal API may fail, mock service will be used as fallback')
+    }
   }
 
   /**
@@ -88,6 +93,7 @@ class PesapalURLService {
       }
     } catch (error) {
       console.error('Failed to get Pesapal access token:', error)
+      console.log('This is expected in development. The application will use the mock service instead.')
       throw new Error('Failed to get access token from Pesapal')
     }
   }
