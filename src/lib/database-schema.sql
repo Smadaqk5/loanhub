@@ -10,6 +10,7 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL,
     kra_pin TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -126,15 +127,17 @@ CREATE POLICY "Users can view own repayments" ON repayments
         )
     );
 
--- Admins can view all data (you'll need to create an admin role)
--- For now, we'll create a simple admin check function
+-- Admin check function
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
-    -- This is a placeholder - you'll need to implement proper admin role checking
-    -- For now, we'll allow all authenticated users to be admins
-    -- In production, you should implement proper role-based access control
-    RETURN auth.uid() IS NOT NULL;
+    -- Check if the current user has admin role
+    RETURN EXISTS (
+        SELECT 1 FROM users 
+        WHERE id = auth.uid() 
+        AND role = 'admin'
+        AND status = 'active'
+    );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
