@@ -28,6 +28,30 @@ function LoanPaymentContent() {
   const [error, setError] = useState('')
   const [paymentHistory, setPaymentHistory] = useState<any[]>([])
 
+  // Helper function to safely calculate processing fee
+  const calculateProcessingFee = (data: any): number => {
+    console.log('Calculating processing fee for data:', data)
+    
+    // Try to get processing fee from various sources
+    const processingFee = data?.processing_fee || data?.calculation?.processingFee;
+    if (processingFee && !isNaN(processingFee) && processingFee > 0) {
+      console.log('Using stored processing fee:', processingFee)
+      return processingFee;
+    }
+    
+    // Fallback: calculate 5% of loan amount
+    const loanAmount = data?.amount_requested || data?.amount || 0;
+    if (loanAmount && !isNaN(loanAmount) && loanAmount > 0) {
+      const calculatedFee = loanAmount * 0.05;
+      console.log('Calculated processing fee:', calculatedFee, 'from loan amount:', loanAmount)
+      return calculatedFee;
+    }
+    
+    // Final fallback: default amount
+    console.log('Using default processing fee: 500')
+    return 500;
+  }
+
   useEffect(() => {
     if (user && !loading) {
       fetchLoanData()
@@ -46,7 +70,9 @@ function LoanPaymentContent() {
       // Fetch loan data from localStorage or database
       const storedLoanData = localStorage.getItem(`loan_${loanId}`)
       if (storedLoanData) {
-        setLoanData(JSON.parse(storedLoanData))
+        const parsedData = JSON.parse(storedLoanData)
+        console.log('Loaded loan data from localStorage:', parsedData)
+        setLoanData(parsedData)
       } else {
         // Try to fetch from database
         const { data, error } = await supabase
@@ -210,7 +236,7 @@ function LoanPaymentContent() {
             <URLOnlyPaymentForm
               loanId={loanData.id || searchParams.get('loanId') || 'unknown'}
               userId={user.id}
-              processingFeeAmount={loanData.processing_fee || loanData.calculation?.processingFee || (loanData.amount_requested * 0.05)}
+              processingFeeAmount={calculateProcessingFee(loanData)}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
               onCancel={handlePaymentCancel}
@@ -241,7 +267,7 @@ function LoanPaymentContent() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Processing Fee (5%):</span>
                     <span className="font-semibold text-red-600">
-                      KES {(loanData.processing_fee || loanData.calculation?.processingFee || (loanData.amount_requested * 0.05)).toLocaleString()}
+                      KES {calculateProcessingFee(loanData).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">

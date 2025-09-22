@@ -131,10 +131,20 @@ export default function LoanApplicationPage() {
       console.log('Redirecting to payment page')
       // Store loan data in localStorage for payment page
       const loanId = `loan_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-      localStorage.setItem(`loan_${loanId}`, JSON.stringify({
+      const loanDataToStore = {
         id: loanId,
-        ...pendingLoanData
-      }))
+        user_id: user.id,
+        amount_requested: data.amount,
+        processing_fee: calc.processingFee,
+        interest_rate: systemSettings.interest_rate_percentage,
+        net_disbursed: calc.netDisbursed,
+        total_repayment: calc.totalRepayment,
+        repayment_deadline: new Date(Date.now() + data.repayment_period_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        loan_purpose: data.loan_purpose,
+        calculation: calc
+      }
+      console.log('Storing loan data:', loanDataToStore)
+      localStorage.setItem(`loan_${loanId}`, JSON.stringify(loanDataToStore))
       
       // Redirect to payment page
       router.push(`/loans/payment?loanId=${loanId}`)
