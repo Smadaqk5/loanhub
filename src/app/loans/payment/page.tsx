@@ -210,7 +210,7 @@ function LoanPaymentContent() {
             <URLOnlyPaymentForm
               loanId={loanData.id || searchParams.get('loanId') || 'unknown'}
               userId={user.id}
-              processingFeeAmount={loanData.processing_fee || loanData.calculation?.processingFee || 500}
+              processingFeeAmount={loanData.processing_fee || loanData.calculation?.processingFee || (loanData.amount_requested * 0.05)}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
               onCancel={handlePaymentCancel}
@@ -239,9 +239,9 @@ function LoanPaymentContent() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Processing Fee:</span>
+                    <span className="text-gray-600">Processing Fee (5%):</span>
                     <span className="font-semibold text-red-600">
-                      KES {(loanData.processing_fee || loanData.calculation?.processingFee || 500).toLocaleString()}
+                      KES {(loanData.processing_fee || loanData.calculation?.processingFee || (loanData.amount_requested * 0.05)).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">

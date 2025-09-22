@@ -43,7 +43,7 @@ export default function TestPaymentPage() {
           <ProcessingFeePayment
             loanId="test-loan-123"
             userId="test-user-456"
-            processingFeeAmount={500.00}
+            processingFeeAmount={2500.00}
             onPaymentSuccess={handlePaymentSuccess}
             onPaymentError={handlePaymentError}
             onCancel={handlePaymentCancel}
@@ -88,7 +88,7 @@ export default function TestPaymentPage() {
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h3 className="font-semibold text-blue-900 mb-2">Test Information</h3>
               <div className="space-y-2 text-sm text-blue-800">
-                <p><strong>Processing Fee:</strong> KES 500.00</p>
+                <p><strong>Processing Fee:</strong> KES 2,500.00 (5% of KES 50,000)</p>
                 <p><strong>Payment Methods:</strong> M-Pesa, Airtel Money, Equitel</p>
                 <p><strong>Test Phone:</strong> Use any valid Kenyan phone number</p>
                 <p><strong>Environment:</strong> Pesapal Sandbox</p>
@@ -112,7 +112,7 @@ export default function TestPaymentPage() {
                 <li>Click "Start Payment Test" below</li>
                 <li>Select a payment method (M-Pesa, Airtel Money, or Equitel)</li>
                 <li>Enter a valid Kenyan phone number</li>
-                <li>Click "Pay KES 500" to initiate STK Push</li>
+                <li>Click "Pay KES 2,500" to initiate STK Push</li>
                 <li>Check your phone for the payment prompt (if in test mode)</li>
                 <li>Observe the payment status updates in real-time</li>
               </ol>
