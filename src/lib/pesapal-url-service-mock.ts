@@ -56,10 +56,14 @@ class MockPesapalURLService {
       const orderTrackingId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
       
       // Generate a mock payment URL that will actually work
-      const mockPaymentUrl = `${window.location.origin}/mock-payment?order=${orderTrackingId}&merchant=${merchantReference}&amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+      const mockPaymentUrl = `${baseUrl}/mock-payment?order=${orderTrackingId}&merchant=${merchantReference}&amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
       
       // Fallback URL in case the mock page doesn't work
       const fallbackUrl = `https://www.pesapal.com/demo?amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
+      
+      console.log('Generated mock payment URL:', mockPaymentUrl)
+      console.log('Base URL:', baseUrl)
 
       // Store payment data in localStorage for tracking
       const paymentData = {
@@ -108,6 +112,18 @@ class MockPesapalURLService {
   openPaymentURL(paymentUrl: string): void {
     if (typeof window !== 'undefined') {
       console.log('Opening payment URL:', paymentUrl)
+      console.log('URL type:', typeof paymentUrl)
+      console.log('URL length:', paymentUrl.length)
+      
+      // Validate URL
+      try {
+        new URL(paymentUrl)
+        console.log('URL is valid')
+      } catch (error) {
+        console.error('Invalid URL:', error)
+        alert('Invalid payment URL: ' + paymentUrl)
+        return
+      }
       
       // Try to open in new window first
       const paymentWindow = window.open(
@@ -137,6 +153,8 @@ class MockPesapalURLService {
         // Focus the new window
         paymentWindow.focus()
       }
+    } else {
+      console.error('Window object not available')
     }
   }
 

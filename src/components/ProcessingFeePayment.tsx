@@ -474,6 +474,19 @@ export function ProcessingFeePayment({
               Open Payment Page
             </Button>
             
+            {/* Direct URL Test */}
+            <Button
+              onClick={() => {
+                const testUrl = `${window.location.origin}/mock-payment?order=DIRECT_TEST&merchant=DIRECT_MERCHANT&amount=1000&phone=+254700000000&method=mpesa`
+                console.log('Opening direct URL:', testUrl)
+                window.open(testUrl, '_blank')
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Open Direct Test URL
+            </Button>
+            
             {/* Debug Info */}
             <div className="text-xs text-gray-500 text-center">
               URL Status: {paymentUrl ? 'Available' : 'Not Set'} | 
@@ -509,6 +522,29 @@ export function ProcessingFeePayment({
               className="w-full"
             >
               Test URL Creation
+            </Button>
+            
+            {/* Simple URL Test */}
+            <Button
+              onClick={() => {
+                const simpleUrl = `${window.location.origin}/mock-payment?order=TEST123&merchant=TEST_MERCHANT&amount=1000&phone=+254700000000&method=mpesa`
+                console.log('Setting simple URL:', simpleUrl)
+                setPaymentUrl(simpleUrl)
+                setPaymentData({
+                  paymentId: 'TEST123',
+                  orderTrackingId: 'TEST123',
+                  merchantReference: 'TEST_MERCHANT',
+                  amount: 1000,
+                  phoneNumber: '+254700000000',
+                  paymentMethod: 'mpesa',
+                  status: 'pending'
+                })
+                toast.success('Simple URL set!')
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Set Simple URL
             </Button>
             
             <Button
