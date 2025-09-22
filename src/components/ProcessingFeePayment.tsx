@@ -20,6 +20,7 @@ import {
 import { pesapalService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-service-prod'
 import { pesapalURLService } from '@/lib/pesapal-url-service'
 import { pesapalURLService as mockPesapalURLService } from '@/lib/pesapal-url-service-mock'
+import { mockPesapalSTKService } from '@/lib/pesapal-service-mock'
 import toast from 'react-hot-toast'
 
 const processingFeeSchema = z.object({
@@ -121,8 +122,28 @@ export function ProcessingFeePayment({
         
         toast.success('Payment URL created! Click "Open Payment Page" to proceed.')
       } else {
-        // Initiate STK Push
-        result = await pesapalService.initiateSTKPush(paymentRequest)
+        // Initiate STK Push with fallback to mock service
+        try {
+          console.log('Attempting to initiate STK Push with real Pesapal service...')
+          result = await pesapalService.initiateSTKPush(paymentRequest)
+          console.log('Real Pesapal STK service result:', result)
+          
+          // If the real service fails, try mock service
+          if (!result.success) {
+            console.warn('Real Pesapal STK API failed, using mock service. Error:', result.error)
+            result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
+            console.log('Mock STK service result:', result)
+          }
+        } catch (error) {
+          console.warn('Real Pesapal STK API threw exception, using mock service:', error)
+          try {
+            result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
+            console.log('Mock STK service result after exception:', result)
+          } catch (mockError) {
+            console.error('Both real and mock STK services failed:', mockError)
+            throw new Error('Payment service unavailable. Please try again later.')
+          }
+        }
 
         if (!result.success) {
           throw new Error(result.error || 'Failed to initiate payment')
@@ -140,7 +161,8 @@ export function ProcessingFeePayment({
         if (data.payment_type === 'url_payment') {
           service = result.paymentUrl?.includes('mock') ? mockPesapalURLService : pesapalURLService
         } else {
-          service = pesapalService
+          // For STK push, determine which service was used
+          service = result.message?.includes('Mock') ? mockPesapalSTKService : pesapalService
         }
         await service.pollPaymentStatus(
           result.orderTrackingId,

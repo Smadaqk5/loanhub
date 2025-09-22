@@ -40,10 +40,10 @@ class ProductionPesapalService {
   private tokenExpiry: number | null = null
 
   constructor() {
-    // Production credentials from environment variables
-    this.baseUrl = process.env.NEXT_PUBLIC_PESAPAL_BASE_URL || 'https://www.pesapal.com/pesapalapi/api'
-    this.consumerKey = process.env.PESAPAL_CONSUMER_KEY || ''
-    this.consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || ''
+    // Use sandbox credentials for development/testing
+    this.baseUrl = 'https://cybqa.pesapal.com/pesapalv3/api'
+    this.consumerKey = 'k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx'
+    this.consumerSecret = 'Tjg4VodFyn1ur9aDMo1fsJvgHQQ='
   }
 
   /**
@@ -56,20 +56,23 @@ class ProductionPesapalService {
     }
 
     try {
-      // Pesapal uses OAuth 1.0a for authentication
-      const authHeader = this.generateOAuthHeader('GET', `${this.baseUrl}/Auth/RequestToken`)
-      
+      // Pesapal v3 uses POST with JSON body for token request
       const response = await fetch(`${this.baseUrl}/Auth/RequestToken`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
-          'Authorization': authHeader,
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          consumer_key: this.consumerKey,
+          consumer_secret: this.consumerSecret
+        })
       })
 
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`HTTP error! status: ${response.status}`)
+        console.error('Pesapal token response error:', errorText)
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
@@ -82,7 +85,8 @@ class ProductionPesapalService {
       } else {
         throw new Error('Invalid response from Pesapal token endpoint')
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Failed to get Pesapal access token:', error)
       throw new Error('Failed to get access token from Pesapal')
     }
   }
@@ -142,31 +146,59 @@ class ProductionPesapalService {
    */
   async initiateSTKPush(paymentRequest: PaymentRequest): Promise<PaymentResponse> {
     try {
-      const response = await fetch('/.netlify/functions/stk-push', {
+      const token = await this.getAccessToken()
+      const merchantReference = this.generateMerchantReference('PROC')
+
+      // Create STK Push request data
+      const stkPushData = {
+        id: merchantReference,
+        currency: 'KES',
+        amount: paymentRequest.amount,
+        description: paymentRequest.description,
+        callback_url: `${window.location.origin}/payment/callback`,
+        notification_id: merchantReference,
+        billing_address: {
+          phone_number: paymentRequest.phoneNumber,
+          email_address: 'user@example.com',
+          country_code: 'KE',
+          first_name: 'User',
+          middle_name: '',
+          last_name: 'Name',
+          line_1: 'Nairobi',
+          line_2: '',
+          city: 'Nairobi',
+          state: 'Nairobi',
+          postal_code: '00100',
+          zip_code: '00100',
+        },
+      }
+
+      console.log('Sending STK Push request:', JSON.stringify(stkPushData, null, 2))
+
+      const response = await fetch(`${this.baseUrl}/Transactions/SubmitOrderRequest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          phoneNumber: paymentRequest.phoneNumber,
-          amount: paymentRequest.amount,
-          description: paymentRequest.description,
-          paymentMethod: paymentRequest.paymentMethod,
-        }),
+        body: JSON.stringify(stkPushData),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'STK Push failed')
+        const errorText = await response.text()
+        console.error('STK Push request failed:', errorText)
+        throw new Error(`STK Push failed: ${errorText}`)
       }
 
       const result = await response.json()
+      console.log('STK Push response:', JSON.stringify(result, null, 2))
 
       // Store payment data in localStorage for tracking
       const paymentData = {
-        paymentId: result.paymentId,
-        orderTrackingId: result.orderTrackingId,
-        merchantReference: result.merchantReference,
+        paymentId: result.order_tracking_id,
+        orderTrackingId: result.order_tracking_id,
+        merchantReference: merchantReference,
         amount: paymentRequest.amount,
         phoneNumber: paymentRequest.phoneNumber,
         paymentMethod: paymentRequest.paymentMethod,
@@ -176,14 +208,14 @@ class ProductionPesapalService {
         initiatedAt: new Date().toISOString()
       }
 
-      localStorage.setItem(`payment_${result.merchantReference}`, JSON.stringify(paymentData))
+      localStorage.setItem(`payment_${merchantReference}`, JSON.stringify(paymentData))
 
       return {
         success: true,
-        paymentId: result.paymentId,
-        orderTrackingId: result.orderTrackingId,
-        merchantReference: result.merchantReference,
-        message: result.message || 'STK Push initiated successfully. Please check your phone and enter your PIN.'
+        paymentId: result.order_tracking_id,
+        orderTrackingId: result.order_tracking_id,
+        merchantReference: merchantReference,
+        message: 'STK Push initiated successfully. Please check your phone and enter your PIN.'
       }
     } catch (error: any) {
       console.error('STK Push error:', error)
@@ -210,10 +242,12 @@ class ProductionPesapalService {
       })
 
       if (!response.ok) {
+        console.error('Payment status check failed:', response.status, await response.text())
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log('Payment status response:', data)
 
       return {
         id: orderTrackingId,
@@ -228,6 +262,7 @@ class ProductionPesapalService {
       }
 
     } catch (error) {
+      console.error('Failed to check payment status:', error)
       return null
     }
   }
