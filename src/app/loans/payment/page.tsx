@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { URLOnlyPaymentForm } from '@/components/URLOnlyPaymentForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -19,7 +19,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
-export default function LoanPaymentPage() {
+function LoanPaymentContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -365,5 +365,20 @@ export default function LoanPaymentPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoanPaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading payment page...</p>
+        </div>
+      </div>
+    }>
+      <LoanPaymentContent />
+    </Suspense>
   )
 }
