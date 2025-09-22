@@ -1,15 +1,32 @@
 import { createClient } from '@supabase/supabase-js'
 import { mockSupabase } from './mock-auth'
 
-// Mock Supabase configuration for development
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-anon-key'
+// Supabase configuration
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Create client with fallback values
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+// Check if real Supabase credentials are available
+const hasRealSupabase = supabaseUrl && supabaseAnonKey && 
+  supabaseUrl !== 'https://your-project-id.supabase.co' &&
+  supabaseAnonKey !== 'your-anon-key-here'
 
-// Use complete mock implementation for development
-export const supabase = mockSupabase
+// Create real Supabase client if credentials are available
+const supabaseClient = hasRealSupabase 
+  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  : createClient('https://mock.supabase.co', 'mock-anon-key')
+
+// Use real Supabase if credentials are available, otherwise use mock
+export const supabase = hasRealSupabase ? supabaseClient : mockSupabase
+
+// Log which system is being used
+if (typeof window !== 'undefined') {
+  console.log(`🔧 Using ${hasRealSupabase ? 'REAL Supabase' : 'MOCK system'} for authentication`)
+  if (hasRealSupabase) {
+    console.log('✅ Supabase URL:', supabaseUrl)
+  } else {
+    console.log('ℹ️ Using mock system. Set up Supabase credentials to use real database.')
+  }
+}
 
 // Database types
 export interface User {
