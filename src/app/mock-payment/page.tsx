@@ -1,19 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle, XCircle, Clock, Smartphone, CreditCard } from 'lucide-react'
 
-export default function MockPaymentPage() {
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic'
+
+function MockPaymentContent() {
   const searchParams = useSearchParams()
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'completed' | 'failed'>('pending')
   const [countdown, setCountdown] = useState(30)
 
-  const orderId = searchParams.get('order')
-  const merchantRef = searchParams.get('merchant')
-  const amount = searchParams.get('amount')
-  const phone = searchParams.get('phone')
-  const method = searchParams.get('method')
+  const orderId = searchParams?.get('order') || 'TEST_ORDER'
+  const merchantRef = searchParams?.get('merchant') || 'TEST_MERCHANT'
+  const amount = searchParams?.get('amount') || '1000'
+  const phone = searchParams?.get('phone') || '+254700000000'
+  const method = searchParams?.get('method') || 'mpesa'
 
   useEffect(() => {
     if (paymentStatus === 'pending') {
@@ -204,5 +207,27 @@ export default function MockPaymentPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function MockPaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+          <div className="text-center">
+            <Clock className="h-12 w-12 text-blue-500 mx-auto animate-pulse mb-4" />
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">
+              Loading Payment Page...
+            </h1>
+            <p className="text-gray-600">
+              Please wait while we prepare your payment.
+            </p>
+          </div>
+        </div>
+      </div>
+    }>
+      <MockPaymentContent />
+    </Suspense>
   )
 }
