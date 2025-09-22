@@ -23,6 +23,66 @@ export interface MockSession {
 let currentUser: MockUser | null = null
 let currentSession: MockSession | null = null
 
+// Persistent storage for users (simulates database)
+const USERS_STORAGE_KEY = 'mock_users'
+const SESSION_STORAGE_KEY = 'mock_session'
+
+// Load users from localStorage
+function loadUsers(): MockUser[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = localStorage.getItem(USERS_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+// Save users to localStorage
+function saveUsers(users: MockUser[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+  } catch (error) {
+    console.error('Failed to save users:', error)
+  }
+}
+
+// Load session from localStorage
+function loadSession(): MockSession | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY)
+    if (stored) {
+      const session = JSON.parse(stored)
+      // Check if session is still valid
+      if (session.expires_at > Date.now()) {
+        return session
+      } else {
+        // Session expired, remove it
+        localStorage.removeItem(SESSION_STORAGE_KEY)
+      }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+// Save session to localStorage
+function saveSession(session: MockSession | null): void {
+  if (typeof window === 'undefined') return
+  try {
+    if (session) {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
+    } else {
+      localStorage.removeItem(SESSION_STORAGE_KEY)
+    }
+  } catch (error) {
+    console.error('Failed to save session:', error)
+  }
+}
+
 // Generate a mock user ID
 function generateMockId(): string {
   return 'mock-' + Math.random().toString(36).substr(2, 9)
@@ -52,19 +112,37 @@ export const mockAuth = {
         expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
       }
       
+      saveSession(currentSession)
       return currentSession
     }
     
-    // Check user credentials
-    const userCreds = FAKE_CREDENTIALS.users.find(u => u.email === email && u.password === password)
+    // Check user credentials from localStorage
+    const users = loadUsers()
+    const userCreds = users.find(u => u.email === email)
     if (userCreds) {
+      // For mock purposes, we'll accept any password for existing users
+      // In a real app, you'd verify the password hash
+      currentUser = userCreds
+      currentSession = {
+        user: userCreds,
+        access_token: 'mock-user-token-' + Date.now(),
+        expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      }
+      
+      saveSession(currentSession)
+      return currentSession
+    }
+    
+    // Check fake credentials for demo users
+    const fakeUserCreds = FAKE_CREDENTIALS.users.find(u => u.email === email && u.password === password)
+    if (fakeUserCreds) {
       const user: MockUser = {
         id: 'user-1', // Fixed ID for first user to match sample loans
-        email: userCreds.email,
-        full_name: userCreds.full_name,
-        national_id: userCreds.national_id,
-        phone_number: userCreds.phone_number,
-        kra_pin: userCreds.kra_pin,
+        email: fakeUserCreds.email,
+        full_name: fakeUserCreds.full_name,
+        national_id: fakeUserCreds.national_id,
+        phone_number: fakeUserCreds.phone_number,
+        kra_pin: fakeUserCreds.kra_pin,
         role: 'user',
         created_at: new Date().toISOString()
       }
@@ -76,6 +154,7 @@ export const mockAuth = {
         expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
       }
       
+      saveSession(currentSession)
       return currentSession
     }
     
@@ -89,9 +168,13 @@ export const mockAuth = {
     phone_number: string
     kra_pin: string
   }): Promise<MockSession> => {
+    // Load existing users
+    const users = loadUsers()
+    
     // Check if email already exists
     if (email === FAKE_CREDENTIALS.admin.email || 
-        FAKE_CREDENTIALS.users.some(u => u.email === email)) {
+        FAKE_CREDENTIALS.users.some(u => u.email === email) ||
+        users.some(u => u.email === email)) {
       throw new Error('Email already exists')
     }
     
@@ -106,6 +189,10 @@ export const mockAuth = {
       created_at: new Date().toISOString()
     }
     
+    // Save user to localStorage
+    users.push(user)
+    saveUsers(users)
+    
     currentUser = user
     currentSession = {
       user,
@@ -113,6 +200,7 @@ export const mockAuth = {
       expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
     }
     
+    saveSession(currentSession)
     return currentSession
   },
 
@@ -120,15 +208,25 @@ export const mockAuth = {
   signOut: async (): Promise<void> => {
     currentUser = null
     currentSession = null
+    saveSession(null)
   },
 
   // Get current session
   getSession: async (): Promise<MockSession | null> => {
+    // First check if we have a valid session in memory
     if (currentSession && currentSession.expires_at > Date.now()) {
       return currentSession
     }
     
-    // Session expired
+    // Try to load session from localStorage
+    const storedSession = loadSession()
+    if (storedSession) {
+      currentSession = storedSession
+      currentUser = storedSession.user
+      return storedSession
+    }
+    
+    // No valid session
     currentUser = null
     currentSession = null
     return null
@@ -142,6 +240,15 @@ export const mockAuth = {
   // Check if user is admin
   isAdmin: (): boolean => {
     return currentUser?.role === 'admin'
+  },
+
+  // Initialize session from localStorage (call this on app startup)
+  initializeSession: async (): Promise<void> => {
+    const session = await loadSession()
+    if (session) {
+      currentSession = session
+      currentUser = session.user
+    }
   }
 }
 

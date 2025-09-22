@@ -26,6 +26,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session using mock auth
     const initAuth = async () => {
       try {
+        // Initialize session from localStorage
+        await mockAuth.initializeSession()
+        
         const session = await mockAuth.getSession()
         if (session) {
           setSession(session as any)
