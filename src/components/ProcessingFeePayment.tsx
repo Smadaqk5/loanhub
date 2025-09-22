@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { pesapalService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-service-prod'
 import { pesapalURLService } from '@/lib/pesapal-url-service'
+import { pesapalURLService as mockPesapalURLService } from '@/lib/pesapal-url-service-mock'
 import toast from 'react-hot-toast'
 
 const processingFeeSchema = z.object({
@@ -87,8 +88,13 @@ export function ProcessingFeePayment({
       let result: any
 
       if (data.payment_type === 'url_payment') {
-        // Create payment URL
-        result = await pesapalURLService.createPaymentURL(paymentRequest)
+        // Create payment URL with fallback to mock service
+        try {
+          result = await pesapalURLService.createPaymentURL(paymentRequest)
+        } catch (error) {
+          console.warn('Real Pesapal API failed, using mock service:', error)
+          result = await mockPesapalURLService.createPaymentURL(paymentRequest)
+        }
         
         if (!result.success) {
           throw new Error(result.error || 'Failed to create payment URL')
@@ -115,7 +121,12 @@ export function ProcessingFeePayment({
 
       // Start polling for payment status
       if (result.orderTrackingId) {
-        const service = data.payment_type === 'url_payment' ? pesapalURLService : pesapalService
+        let service: any
+        if (data.payment_type === 'url_payment') {
+          service = result.paymentUrl?.includes('mock') ? mockPesapalURLService : pesapalURLService
+        } else {
+          service = pesapalService
+        }
         await service.pollPaymentStatus(
           result.orderTrackingId,
           (status) => {

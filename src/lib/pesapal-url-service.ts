@@ -42,7 +42,7 @@ class PesapalURLService {
 
   constructor() {
     // Use sandbox credentials for development
-    this.baseUrl = 'https://cybqa.pesapal.com/pesapalapi/api'
+    this.baseUrl = 'https://cybqa.pesapal.com/pesapalv3/api'
     this.consumerKey = 'k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx'
     this.consumerSecret = 'Tjg4VodFyn1ur9aDMo1fsJvgHQQ='
   }
@@ -57,21 +57,23 @@ class PesapalURLService {
     }
 
     try {
-      // Pesapal uses OAuth 1.0a for authentication
-      const authHeader = this.generateOAuthHeader('GET', `${this.baseUrl}/Auth/RequestToken`)
-      
+      // Pesapal v3 uses POST with JSON body for token request
       const response = await fetch(`${this.baseUrl}/Auth/RequestToken`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
-          'Authorization': authHeader,
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          consumer_key: this.consumerKey,
+          consumer_secret: this.consumerSecret
+        })
       })
 
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Pesapal token response error:', errorText)
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
