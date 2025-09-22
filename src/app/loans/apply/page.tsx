@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { LoanCalculator } from '@/components/LoanCalculator'
-import { ProcessingFeePayment } from '@/components/ProcessingFeePayment'
 import { RateDisplay } from '@/components/RateDisplay'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -44,10 +43,7 @@ export default function LoanApplicationPage() {
     sms_notifications: true
   })
   const [calculation, setCalculation] = useState<any>(null)
-  const [showPaymentStep, setShowPaymentStep] = useState(false)
   const [pendingLoanData, setPendingLoanData] = useState<any>(null)
-  const [paymentMethod, setPaymentMethod] = useState('')
-  const [showProcessingFeePayment, setShowProcessingFeePayment] = useState(false)
 
   const {
     register,
@@ -132,9 +128,16 @@ export default function LoanApplicationPage() {
         calculation: calc
       })
 
-      console.log('Setting payment step to true')
-      // Show processing fee payment step
-      setShowProcessingFeePayment(true)
+      console.log('Redirecting to payment page')
+      // Store loan data in localStorage for payment page
+      const loanId = `loan_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+      localStorage.setItem(`loan_${loanId}`, JSON.stringify({
+        id: loanId,
+        ...pendingLoanData
+      }))
+      
+      // Redirect to payment page
+      router.push(`/loans/payment?loanId=${loanId}`)
     } catch (err: any) {
       console.error('Error in onSubmit:', err)
       setError(err.message || 'An error occurred while processing your application')
@@ -143,45 +146,6 @@ export default function LoanApplicationPage() {
     }
   }
 
-  const handlePaymentSuccess = async (paymentData: any) => {
-    setIsSubmitting(true)
-    setError('')
-
-    try {
-      // Create the loan with processing fee paid status
-      const { error: loanError } = await supabase
-        .from('loans')
-        .insert({
-          ...pendingLoanData,
-          status: 'processing_fee_paid',
-          payment_method: paymentData.paymentMethod || 'mpesa',
-          processing_fee_paid_at: new Date().toISOString()
-        })
-
-      if (loanError) throw loanError
-
-      // Reset payment states
-      setShowProcessingFeePayment(false)
-      setShowPaymentStep(false)
-      setPendingLoanData(null)
-
-      router.push('/dashboard?success=loan_applied&payment=success')
-    } catch (err: any) {
-      setError(err.message || 'Failed to save loan application. Please contact support.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handlePaymentError = (error: string) => {
-    setError(error)
-    setShowProcessingFeePayment(false)
-  }
-
-  const handlePaymentCancel = () => {
-    setShowProcessingFeePayment(false)
-    setPendingLoanData(null)
-  }
 
   if (loading) {
     return (
@@ -553,19 +517,6 @@ export default function LoanApplicationPage() {
             )}
           </div>
 
-          {/* Processing Fee Payment Step */}
-          {showProcessingFeePayment && pendingLoanData && (
-            <div className="mt-8">
-              <ProcessingFeePayment
-                loanId={pendingLoanData.user_id} // Using user_id as loan identifier for now
-                userId={pendingLoanData.user_id}
-                processingFeeAmount={pendingLoanData.processing_fee}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentError={handlePaymentError}
-                onCancel={handlePaymentCancel}
-              />
-            </div>
-          )}
         </div>
       </div>
     </div>
