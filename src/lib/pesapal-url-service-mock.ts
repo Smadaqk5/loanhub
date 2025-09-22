@@ -55,8 +55,11 @@ class MockPesapalURLService {
       const merchantReference = this.generateMerchantReference('PROC')
       const orderTrackingId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
       
-      // Generate a mock payment URL
-      const mockPaymentUrl = `https://cybqa.pesapal.com/pesapalv3/api/checkout?order=${orderTrackingId}&merchant=${merchantReference}`
+      // Generate a mock payment URL that will actually work
+      const mockPaymentUrl = `${window.location.origin}/mock-payment?order=${orderTrackingId}&merchant=${merchantReference}&amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
+      
+      // Fallback URL in case the mock page doesn't work
+      const fallbackUrl = `https://www.pesapal.com/demo?amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
 
       // Store payment data in localStorage for tracking
       const paymentData = {
@@ -104,16 +107,35 @@ class MockPesapalURLService {
    */
   openPaymentURL(paymentUrl: string): void {
     if (typeof window !== 'undefined') {
-      // Open in new window with specific dimensions
+      console.log('Opening payment URL:', paymentUrl)
+      
+      // Try to open in new window first
       const paymentWindow = window.open(
         paymentUrl,
         'pesapal_payment',
-        'width=800,height=600,scrollbars=yes,resizable=yes,status=yes,location=yes'
+        'width=900,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes,menubar=no,toolbar=no'
       )
       
-      if (!paymentWindow) {
-        // Fallback to new tab if popup is blocked
-        window.open(paymentUrl, '_blank')
+      if (!paymentWindow || paymentWindow.closed) {
+        console.warn('Popup blocked, trying alternative methods...')
+        
+        // Try opening in new tab
+        const newTab = window.open(paymentUrl, '_blank')
+        
+        if (!newTab) {
+          // Last resort: redirect current window
+          console.warn('All popup methods blocked, redirecting current window')
+          if (confirm('Popup blocked. Redirect to payment page?')) {
+            window.location.href = paymentUrl
+          }
+        } else {
+          console.log('Payment opened in new tab')
+        }
+      } else {
+        console.log('Payment opened in new window')
+        
+        // Focus the new window
+        paymentWindow.focus()
       }
     }
   }

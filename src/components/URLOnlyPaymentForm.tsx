@@ -394,6 +394,16 @@ export function URLOnlyPaymentForm({
             </div>
           )}
 
+          {/* Debug URL Display */}
+          {paymentUrl && (
+            <div className="bg-gray-100 p-3 rounded-lg">
+              <p className="text-xs text-gray-600 mb-2">Payment URL:</p>
+              <p className="font-mono text-xs text-gray-800 break-all">
+                {paymentUrl}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3">
             <Button
               onClick={handleOpenPaymentURL}
@@ -402,6 +412,23 @@ export function URLOnlyPaymentForm({
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Open Payment Page
+            </Button>
+            
+            {/* Test URL Button */}
+            <Button
+              onClick={() => {
+                if (paymentUrl) {
+                  console.log('Testing URL:', paymentUrl)
+                  // Try to open the URL directly
+                  window.open(paymentUrl, '_blank')
+                }
+              }}
+              variant="outline"
+              className="w-full"
+              disabled={!paymentUrl}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Test URL (New Tab)
             </Button>
             
             <Button
