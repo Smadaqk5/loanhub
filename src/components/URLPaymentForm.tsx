@@ -17,21 +17,19 @@ import {
   ExternalLink,
   RefreshCw
 } from 'lucide-react'
-import { pesapalService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-service-prod'
-import { pesapalURLService } from '@/lib/pesapal-url-service'
+import { pesapalURLService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-url-service'
 import toast from 'react-hot-toast'
 
 const processingFeeSchema = z.object({
   phone_number: z.string()
     .min(10, 'Phone number must be at least 10 digits')
     .regex(/^(\+254|0)[0-9]{9}$/, 'Please enter a valid Kenyan phone number'),
-  payment_method: z.enum(['mpesa', 'airtel_money', 'equitel']),
-  payment_type: z.enum(['stk_push', 'url_payment'])
+  payment_method: z.enum(['mpesa', 'airtel_money', 'equitel'])
 })
 
 type ProcessingFeeFormData = z.infer<typeof processingFeeSchema>
 
-interface ProcessingFeePaymentProps {
+interface URLPaymentFormProps {
   loanId: string
   userId: string
   processingFeeAmount: number
@@ -40,16 +38,16 @@ interface ProcessingFeePaymentProps {
   onCancel: () => void
 }
 
-export function ProcessingFeePayment({
+export function URLPaymentForm({
   loanId,
   userId,
   processingFeeAmount,
   onPaymentSuccess,
   onPaymentError,
   onCancel
-}: ProcessingFeePaymentProps) {
+}: URLPaymentFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'initiated' | 'processing' | 'completed' | 'failed' | 'url_created'>('idle')
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'url_created' | 'processing' | 'completed' | 'failed'>('idle')
   const [paymentData, setPaymentData] = useState<any>(null)
   const [currentPaymentStatus, setCurrentPaymentStatus] = useState<PaymentStatus | null>(null)
   const [paymentUrl, setPaymentUrl] = useState<string>('')
@@ -62,17 +60,15 @@ export function ProcessingFeePayment({
   } = useForm<ProcessingFeeFormData>({
     resolver: zodResolver(processingFeeSchema),
     defaultValues: {
-      payment_method: 'mpesa',
-      payment_type: 'stk_push'
+      payment_method: 'mpesa'
     }
   })
 
   const watchedPaymentMethod = watch('payment_method')
-  const watchedPaymentType = watch('payment_type')
 
   const onSubmit = async (data: ProcessingFeeFormData) => {
     setIsLoading(true)
-    setPaymentStatus('initiated')
+    setPaymentStatus('url_created')
 
     try {
       const paymentRequest: PaymentRequest = {
@@ -84,39 +80,22 @@ export function ProcessingFeePayment({
         description: `Processing fee payment for loan ${loanId.slice(-8)}`
       }
 
-      let result: any
+      // Create payment URL
+      const result = await pesapalURLService.createPaymentURL(paymentRequest)
 
-      if (data.payment_type === 'url_payment') {
-        // Create payment URL
-        result = await pesapalURLService.createPaymentURL(paymentRequest)
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to create payment URL')
-        }
-
-        setPaymentData(result)
-        setPaymentUrl(result.paymentUrl || '')
-        setPaymentStatus('url_created')
-        
-        toast.success('Payment URL created! Click "Open Payment Page" to proceed.')
-      } else {
-        // Initiate STK Push
-        result = await pesapalService.initiateSTKPush(paymentRequest)
-
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to initiate payment')
-        }
-
-        setPaymentData(result)
-        setPaymentStatus('processing')
-        
-        toast.success('STK Push sent! Please check your phone and enter your PIN.')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create payment URL')
       }
 
-      // Start polling for payment status
+      setPaymentData(result)
+      setPaymentUrl(result.paymentUrl || '')
+      setPaymentStatus('processing')
+      
+      toast.success('Payment URL created! Click "Open Payment Page" to proceed.')
+
+      // Start polling for payment status if we have an order tracking ID
       if (result.orderTrackingId) {
-        const service = data.payment_type === 'url_payment' ? pesapalURLService : pesapalService
-        await service.pollPaymentStatus(
+        await pesapalURLService.pollPaymentStatus(
           result.orderTrackingId,
           (status) => {
             setCurrentPaymentStatus(status)
@@ -141,10 +120,10 @@ export function ProcessingFeePayment({
       }
 
     } catch (error: any) {
-      console.error('Payment initiation error:', error)
+      console.error('Payment URL creation error:', error)
       setPaymentStatus('failed')
-      toast.error(error.message || 'Failed to initiate payment')
-      onPaymentError(error.message || 'Failed to initiate payment')
+      toast.error(error.message || 'Failed to create payment URL')
+      onPaymentError(error.message || 'Failed to create payment URL')
     } finally {
       setIsLoading(false)
     }
@@ -158,7 +137,7 @@ export function ProcessingFeePayment({
   }
 
   const formatCurrency = (amount: number) => {
-    return pesapalService.formatCurrency(amount)
+    return pesapalURLService.formatCurrency(amount)
   }
 
   const getPaymentMethodIcon = (method: string) => {
@@ -175,7 +154,7 @@ export function ProcessingFeePayment({
   }
 
   const getPaymentMethodName = (method: string) => {
-    return pesapalService.getPaymentMethodName(method)
+    return pesapalURLService.getPaymentMethodName(method)
   }
 
   const getStatusIcon = () => {
@@ -188,8 +167,6 @@ export function ProcessingFeePayment({
         return <Loader2 className="h-16 w-16 text-blue-600 animate-spin" />
       case 'url_created':
         return <ExternalLink className="h-16 w-16 text-yellow-600" />
-      case 'initiated':
-        return <Clock className="h-16 w-16 text-yellow-600" />
       default:
         return <CreditCard className="h-16 w-16 text-gray-600" />
     }
@@ -204,8 +181,6 @@ export function ProcessingFeePayment({
       case 'processing':
         return 'border-blue-200 bg-blue-50'
       case 'url_created':
-        return 'border-yellow-200 bg-yellow-50'
-      case 'initiated':
         return 'border-yellow-200 bg-yellow-50'
       default:
         return 'border-gray-200 bg-white'
@@ -222,8 +197,6 @@ export function ProcessingFeePayment({
         return 'Processing Payment...'
       case 'url_created':
         return 'Payment URL Ready'
-      case 'initiated':
-        return 'Payment Initiated'
       default:
         return 'Pay Processing Fee'
     }
@@ -236,11 +209,9 @@ export function ProcessingFeePayment({
       case 'failed':
         return 'Your payment could not be processed. Please check your mobile money balance and try again.'
       case 'processing':
-        return 'Please check your phone and enter your mobile money PIN to complete the payment.'
+        return 'Please complete the payment in the opened window. This page will update automatically when payment is completed.'
       case 'url_created':
         return 'Payment URL has been created. Click "Open Payment Page" to proceed with payment.'
-      case 'initiated':
-        return 'STK Push has been sent to your phone. Please check and enter your PIN.'
       default:
         return 'Complete your processing fee payment to proceed with your loan application.'
     }
@@ -334,6 +305,7 @@ export function ProcessingFeePayment({
                 setPaymentStatus('idle')
                 setPaymentData(null)
                 setCurrentPaymentStatus(null)
+                setPaymentUrl('')
               }}
               className="w-full"
             >
@@ -352,7 +324,7 @@ export function ProcessingFeePayment({
     )
   }
 
-  if (paymentStatus === 'url_created') {
+  if (paymentStatus === 'processing' || paymentStatus === 'url_created') {
     return (
       <Card className={`${getStatusColor()}`}>
         <CardHeader className="text-center">
@@ -424,63 +396,6 @@ export function ProcessingFeePayment({
             </Button>
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              ⏱️ This may take a few minutes. Please do not close this page.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (paymentStatus === 'processing' || paymentStatus === 'initiated') {
-    return (
-      <Card className={`${getStatusColor()}`}>
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            {getStatusIcon()}
-          </div>
-          <CardTitle className="text-2xl text-blue-800">
-            {getStatusTitle()}
-          </CardTitle>
-          <CardDescription className="text-blue-700">
-            {getStatusDescription()}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-blue-100 p-4 rounded-lg">
-            <div className="flex items-center">
-              <Smartphone className="h-5 w-5 text-blue-600 mr-2" />
-              <span className="text-blue-800 font-medium">
-                Check your phone for payment prompt
-              </span>
-            </div>
-            <p className="text-blue-700 text-sm mt-1">
-              Enter your mobile money PIN when prompted. This page will update automatically when payment is completed.
-            </p>
-          </div>
-
-          {paymentData && (
-            <div className="bg-white p-4 rounded-lg border">
-              <h3 className="font-semibold text-gray-900 mb-2">Payment Details</h3>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Amount:</span>
-                  <span className="font-medium">{formatCurrency(processingFeeAmount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Method:</span>
-                  <span className="font-medium">{getPaymentMethodName(watchedPaymentMethod)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Reference:</span>
-                  <span className="font-mono text-xs">{paymentData.paymentId}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           {currentPaymentStatus && (
             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
               <div className="flex items-center">
@@ -526,49 +441,6 @@ export function ProcessingFeePayment({
                 This fee is required to process your loan application
               </p>
             </div>
-          </div>
-
-          {/* Payment Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Select Payment Type
-            </label>
-            <div className="space-y-3">
-              {[
-                { value: 'stk_push', label: 'STK Push', description: 'Direct payment to your phone' },
-                { value: 'url_payment', label: 'Payment URL', description: 'Open payment page in new window' }
-              ].map((type) => (
-                <label
-                  key={type.value}
-                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                    watchedPaymentType === type.value
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    {...register('payment_type')}
-                    type="radio"
-                    value={type.value}
-                    className="mr-3"
-                  />
-                  <div className="flex items-center">
-                    {type.value === 'stk_push' ? (
-                      <Smartphone className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <ExternalLink className="h-5 w-5 text-blue-600" />
-                    )}
-                    <div className="ml-3">
-                      <div className="font-medium">{type.label}</div>
-                      <div className="text-sm text-gray-500">{type.description}</div>
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-            {errors.payment_type && (
-              <p className="mt-1 text-sm text-red-600">{errors.payment_type.message}</p>
-            )}
           </div>
 
           {/* Payment Method Selection */}
@@ -638,8 +510,8 @@ export function ProcessingFeePayment({
                 <p className="font-medium mb-1">Important:</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>Ensure you have sufficient balance in your mobile money account</li>
-                  <li>You will receive a payment prompt on your phone</li>
-                  <li>Enter your mobile money PIN to complete the payment</li>
+                  <li>A payment page will open in a new window</li>
+                  <li>Complete the payment on the Pesapal page</li>
                   <li>Do not close this page until payment is confirmed</li>
                   <li>Processing fee is non-refundable once paid</li>
                 </ul>
@@ -657,16 +529,12 @@ export function ProcessingFeePayment({
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {watchedPaymentType === 'url_payment' ? 'Creating Payment URL...' : 'Initiating Payment...'}
+                  Creating Payment URL...
                 </>
               ) : (
                 <>
-                  {watchedPaymentType === 'url_payment' ? (
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                  ) : (
-                    <CreditCard className="h-4 w-4 mr-2" />
-                  )}
-                  {watchedPaymentType === 'url_payment' ? 'Create Payment URL' : `Pay ${formatCurrency(processingFeeAmount)}`}
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Create Payment URL
                 </>
               )}
             </Button>
