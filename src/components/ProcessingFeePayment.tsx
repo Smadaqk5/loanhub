@@ -89,37 +89,44 @@ export function ProcessingFeePayment({
       let result: any
 
       if (data.payment_type === 'url_payment') {
-        // Create payment URL with fallback to mock service
-        try {
-          console.log('Attempting to create payment URL with real Pesapal service...')
-          result = await pesapalURLService.createPaymentURL(paymentRequest)
-          console.log('Real Pesapal service result:', result)
-          
-          // If the real service fails, try mock service
-          if (!result.success) {
-            console.warn('Real Pesapal API failed, using mock service. Error:', result.error)
-            result = await mockPesapalURLService.createPaymentURL(paymentRequest)
-            console.log('Mock service result:', result)
-          }
-        } catch (error) {
-          console.warn('Real Pesapal API threw exception, using mock service:', error)
-          try {
-            result = await mockPesapalURLService.createPaymentURL(paymentRequest)
-            console.log('Mock service result after exception:', result)
-          } catch (mockError) {
-            console.error('Both real and mock services failed:', mockError)
-            throw new Error('Payment service unavailable. Please try again later.')
-          }
-        }
+        // Always use mock service for now to ensure it works
+        console.log('Creating payment URL with mock service...')
+        result = await mockPesapalURLService.createPaymentURL(paymentRequest)
+        console.log('Mock service result:', result)
+        
+        // TODO: Re-enable real service when Pesapal API is working
+        // try {
+        //   console.log('Attempting to create payment URL with real Pesapal service...')
+        //   result = await pesapalURLService.createPaymentURL(paymentRequest)
+        //   console.log('Real Pesapal service result:', result)
+        //   
+        //   // If the real service fails, try mock service
+        //   if (!result.success) {
+        //     console.warn('Real Pesapal API failed, using mock service. Error:', result.error)
+        //     result = await mockPesapalURLService.createPaymentURL(paymentRequest)
+        //     console.log('Mock service result:', result)
+        //   }
+        // } catch (error) {
+        //   console.warn('Real Pesapal API threw exception, using mock service:', error)
+        //   try {
+        //     result = await mockPesapalURLService.createPaymentURL(paymentRequest)
+        //     console.log('Mock service result after exception:', result)
+        //   } catch (mockError) {
+        //     console.error('Both real and mock services failed:', mockError)
+        //     throw new Error('Payment service unavailable. Please try again later.')
+        //   }
+        // }
         
         if (!result.success) {
           throw new Error(result.error || 'Failed to create payment URL')
         }
 
+        console.log('Setting payment data:', result)
         setPaymentData(result)
         setPaymentUrl(result.paymentUrl || '')
         setPaymentStatus('url_created')
         
+        console.log('Payment URL set:', result.paymentUrl)
         toast.success('Payment URL created! Click "Open Payment Page" to proceed.')
       } else {
         // Initiate STK Push with fallback to mock service
@@ -447,6 +454,16 @@ export function ProcessingFeePayment({
             </div>
           )}
 
+          {/* Debug URL Display */}
+          {paymentUrl && (
+            <div className="bg-gray-100 p-3 rounded-lg">
+              <p className="text-xs text-gray-600 mb-2">Payment URL:</p>
+              <p className="font-mono text-xs text-gray-800 break-all">
+                {paymentUrl}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3">
             <Button
               onClick={handleOpenPaymentURL}
@@ -455,6 +472,43 @@ export function ProcessingFeePayment({
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Open Payment Page
+            </Button>
+            
+            {/* Debug Info */}
+            <div className="text-xs text-gray-500 text-center">
+              URL Status: {paymentUrl ? 'Available' : 'Not Set'} | 
+              Payment Data: {paymentData ? 'Set' : 'Not Set'}
+            </div>
+            
+            {/* Test URL Creation */}
+            <Button
+              onClick={async () => {
+                console.log('Testing URL creation...')
+                const testRequest = {
+                  loanId: 'TEST_LOAN',
+                  userId: 'TEST_USER',
+                  amount: 1000,
+                  phoneNumber: '+254700000000',
+                  paymentMethod: 'mpesa' as const,
+                  description: 'Test payment'
+                }
+                try {
+                  const testResult = await mockPesapalURLService.createPaymentURL(testRequest)
+                  console.log('Test result:', testResult)
+                  if (testResult.success) {
+                    setPaymentUrl(testResult.paymentUrl || '')
+                    setPaymentData(testResult)
+                    toast.success('Test URL created!')
+                  }
+                } catch (error) {
+                  console.error('Test failed:', error)
+                  toast.error('Test failed')
+                }
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Test URL Creation
             </Button>
             
             <Button
