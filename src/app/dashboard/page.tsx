@@ -16,8 +16,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase, Loan } from '@/lib/supabase'
-import { DevCredentialsHelper } from '@/components/DevCredentialsHelper'
-import { mockAuth } from '@/lib/mock-auth'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -118,17 +116,9 @@ export default function DashboardPage() {
             <p className="text-gray-600">Sign in to access your dashboard and manage your loans.</p>
           </div>
           
-          <DevCredentialsHelper 
-            onSignIn={async (email, password) => {
-              await mockAuth.signIn(email, password)
-            }}
-          />
-          
           <div className="text-center">
             <Link href="/auth/signin">
-              <Button variant="outline" className="w-full">
-                Manual Sign In
-              </Button>
+              <Button>Sign In</Button>
             </Link>
           </div>
         </div>

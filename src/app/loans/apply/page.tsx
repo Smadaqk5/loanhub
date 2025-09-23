@@ -94,11 +94,7 @@ export default function LoanApplicationPage() {
   }
 
   const onSubmit = async (data: LoanApplicationForm) => {
-    console.log('Form submitted with data:', data)
-    console.log('User:', user)
-    
     if (!user) {
-      console.log('No user found, returning early')
       setError('You must be logged in to apply for a loan')
       return
     }
@@ -107,14 +103,12 @@ export default function LoanApplicationPage() {
     setError('')
 
     try {
-      console.log('Calculating loan...')
       const calc = calculateLoan(
         data.amount,
         systemSettings.processing_fee_percentage,
         systemSettings.interest_rate_percentage,
         data.repayment_period_days
       )
-      console.log('Loan calculation result:', calc)
 
       // Store the loan data for payment step
       setPendingLoanData({
@@ -129,7 +123,6 @@ export default function LoanApplicationPage() {
         calculation: calc
       })
 
-      console.log('Redirecting to payment page')
       // Store loan data in localStorage for payment page
       const loanId = `loan_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
       const loanDataToStore = {
@@ -144,7 +137,6 @@ export default function LoanApplicationPage() {
         loan_purpose: data.loan_purpose,
         calculation: calc
       }
-      console.log('Storing loan data:', loanDataToStore)
       localStorage.setItem(`loan_${loanId}`, JSON.stringify(loanDataToStore))
       
       // Redirect to payment page
@@ -455,26 +447,6 @@ export default function LoanApplicationPage() {
                       {isSubmitting ? 'Submitting Application...' : 'Submit Application'}
                     </Button>
                     
-                    {/* Test Button for Debugging */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        console.log('Test button clicked')
-                        console.log('Current form values:', {
-                          amount: watch('amount'),
-                          repayment_period_days: watch('repayment_period_days'),
-                          loan_purpose: watch('loan_purpose'),
-                          terms_accepted: watch('terms_accepted')
-                        })
-                        console.log('Form errors:', errors)
-                        console.log('User:', user)
-                        console.log('System settings:', systemSettings)
-                      }}
-                    >
-                      🐛 Debug Form (Check Console)
-                    </Button>
                   </div>
                 </form>
               </CardContent>

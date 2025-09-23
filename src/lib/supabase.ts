@@ -20,12 +20,6 @@ export const supabase = hasRealSupabase ? supabaseClient : mockSupabase
 
 // Log which system is being used
 if (typeof window !== 'undefined') {
-  console.log(`🔧 Using ${hasRealSupabase ? 'REAL Supabase' : 'MOCK system'} for authentication`)
-  if (hasRealSupabase) {
-    console.log('✅ Supabase URL:', supabaseUrl)
-  } else {
-    console.log('ℹ️ Using mock system. Set up Supabase credentials to use real database.')
-  }
 }
 
 // Database types
