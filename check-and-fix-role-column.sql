@@ -1,11 +1,11 @@
--- CHECK AND FIX ROLE COLUMN ISSUE
+ CHECK AND FIX ROLE COLUMN ISSUE
 -- Run this in Supabase SQL Editor to diagnose and fix the role column
 
 -- Step 1: Check if users table exists
 SELECT 
     CASE 
         WHEN EXISTS (
-            SELECT 1 FROM information_schema.tables 
+            SELECT 1 FROM informa--tion_schema.tables 
             WHERE table_name = 'users' 
             AND table_schema = 'public'
         ) THEN '✅ users table EXISTS'
