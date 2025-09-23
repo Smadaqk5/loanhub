@@ -21,7 +21,9 @@ import { pesapalService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-ser
 import { pesapalURLService } from '@/lib/pesapal-url-service'
 import { pesapalURLService as mockPesapalURLService } from '@/lib/pesapal-url-service-mock'
 import { mockPesapalSTKService } from '@/lib/pesapal-service-mock'
+import { enhancedMockPesapalSTKService } from '@/lib/pesapal-service-mock-enhanced'
 import { enhancedPesapalService } from '@/lib/pesapal-service-enhanced'
+import { PaymentStatusDebug } from '@/components/PaymentStatusDebug'
 import toast from 'react-hot-toast'
 
 const processingFeeSchema = z.object({
@@ -142,11 +144,11 @@ export function ProcessingFeePayment({
             result = await pesapalService.initiateSTKPush(paymentRequest)
             console.log('Original Pesapal STK service result:', result)
             
-            // If original service also fails, try mock service
+            // If original service also fails, try enhanced mock service
             if (!result.success) {
-              console.warn('Original Pesapal STK API failed, using mock service. Error:', result.error)
-              result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
-              console.log('Mock STK service result:', result)
+              console.warn('Original Pesapal STK API failed, using enhanced mock service. Error:', result.error)
+              result = await enhancedMockPesapalSTKService.initiateSTKPush(paymentRequest)
+              console.log('Enhanced Mock STK service result:', result)
             }
           }
         } catch (error) {
@@ -157,9 +159,9 @@ export function ProcessingFeePayment({
             console.log('Original service result after exception:', result)
             
             if (!result.success) {
-              // Try mock service
-              result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
-              console.log('Mock STK service result after exception:', result)
+              // Try enhanced mock service
+              result = await enhancedMockPesapalSTKService.initiateSTKPush(paymentRequest)
+              console.log('Enhanced Mock STK service result after exception:', result)
             }
           } catch (fallbackError) {
             console.error('All STK services failed:', fallbackError)
@@ -184,7 +186,9 @@ export function ProcessingFeePayment({
           service = result.paymentUrl?.includes('mock') ? mockPesapalURLService : pesapalURLService
         } else {
           // For STK push, determine which service was used
-          if (result.message?.includes('Mock')) {
+          if (result.message?.includes('Enhanced Mock')) {
+            service = enhancedMockPesapalSTKService
+          } else if (result.message?.includes('Mock')) {
             service = mockPesapalSTKService
           } else if (result.message?.includes('enhanced')) {
             service = enhancedPesapalService
@@ -639,6 +643,12 @@ export function ProcessingFeePayment({
               </div>
             </div>
           )}
+
+          {/* Debug component for troubleshooting */}
+          <PaymentStatusDebug 
+            orderTrackingId={paymentData?.orderTrackingId}
+            paymentData={paymentData}
+          />
 
           {currentPaymentStatus && (
             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
