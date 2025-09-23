@@ -4,6 +4,8 @@ import React from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
+import { SmoothLink } from '@/components/SmoothNavigation'
+import { motion } from 'framer-motion'
 import { 
   Home, 
   User, 
@@ -45,14 +47,18 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center group">
-              <div className="bg-white p-2 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300">
+            <SmoothLink href="/" className="flex-shrink-0 flex items-center group">
+              <motion.div 
+                className="bg-white p-2 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <CreditCard className="h-8 w-8 text-lime-600" />
-              </div>
+              </motion.div>
               <span className="ml-3 text-2xl font-bold text-white group-hover:text-lime-100 transition-colors duration-300">
                 LoanHub Kenya
               </span>
-            </Link>
+            </SmoothLink>
           </div>
 
           {/* Desktop Navigation */}
@@ -61,25 +67,25 @@ export function Navigation() {
               <>
                 {isAdmin ? (
                   adminNavItems.map((item) => (
-                    <Link
+                    <SmoothLink
                       key={item.href}
                       href={item.href}
                       className="flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white hover:text-lime-100 hover:bg-white/20 transition-all duration-300 hover:scale-105"
                     >
                       <item.icon className="h-4 w-4 mr-2" />
                       {item.label}
-                    </Link>
+                    </SmoothLink>
                   ))
                 ) : (
                   userNavItems.map((item) => (
-                    <Link
+                    <SmoothLink
                       key={item.href}
                       href={item.href}
                       className="flex items-center px-4 py-2 rounded-xl text-sm font-semibold text-white hover:text-lime-100 hover:bg-white/20 transition-all duration-300 hover:scale-105"
                     >
                       <item.icon className="h-4 w-4 mr-2" />
                       {item.label}
-                    </Link>
+                    </SmoothLink>
                   ))
                 )}
                 <Button
@@ -128,7 +134,7 @@ export function Navigation() {
               <>
                 {isAdmin ? (
                   adminNavItems.map((item) => (
-                    <Link
+                    <SmoothLink
                       key={item.href}
                       href={item.href}
                       className="flex items-center px-3 py-2 rounded-xl text-base font-semibold text-lime-700 hover:text-lime-600 hover:bg-lime-100 transition-all duration-300"
@@ -136,11 +142,11 @@ export function Navigation() {
                     >
                       <item.icon className="h-5 w-5 mr-3" />
                       {item.label}
-                    </Link>
+                    </SmoothLink>
                   ))
                 ) : (
                   userNavItems.map((item) => (
-                    <Link
+                    <SmoothLink
                       key={item.href}
                       href={item.href}
                       className="flex items-center px-3 py-2 rounded-xl text-base font-semibold text-lime-700 hover:text-lime-600 hover:bg-lime-100 transition-all duration-300"
@@ -148,7 +154,7 @@ export function Navigation() {
                     >
                       <item.icon className="h-5 w-5 mr-3" />
                       {item.label}
-                    </Link>
+                    </SmoothLink>
                   ))
                 )}
                 <Button
