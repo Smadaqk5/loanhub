@@ -68,6 +68,9 @@ async function getAccessToken() {
       });
       
       res.on('end', () => {
+        console.log(`   Status Code: ${res.statusCode}`);
+        console.log(`   Response: ${data}`);
+        
         try {
           const response = JSON.parse(data);
           if (response.token) {
@@ -76,7 +79,7 @@ async function getAccessToken() {
             resolve({ success: false, error: response.message || 'No token received' });
           }
         } catch (error) {
-          resolve({ success: false, error: 'Invalid JSON response' });
+          resolve({ success: false, error: `Invalid JSON response: ${data}` });
         }
       });
     });
