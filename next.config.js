@@ -43,6 +43,9 @@ const nextConfig = {
       /Critical dependency: the request of a dependency is an expression/,
     ];
     
+    // Disable cache to avoid path issues with special characters
+    config.cache = false;
+    
     return config;
   },
 }

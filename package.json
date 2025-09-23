@@ -10,7 +10,8 @@
     "netlify:build": "next build",
     "netlify:dev": "netlify dev",
     "build:production": "NODE_ENV=production next build",
-    "build:netlify": "npm ci && npm run build:production"
+    "build:netlify": "npm ci && npm run build:production",
+    "build:clean": "rm -rf .next && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
