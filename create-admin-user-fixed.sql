@@ -1,11 +1,11 @@
--- Create Admin User Directly in Supabase
+-- Create Admin User Directly in Supabase (FIXED VERSION)
 -- Run this script in Supabase SQL Editor
 
 -- Step 1: Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Step 2: Create admin user in auth.users table
+-- Step 2: Create admin user in auth.users table (simplified version)
 INSERT INTO auth.users (
   instance_id,
   id,
@@ -14,32 +14,10 @@ INSERT INTO auth.users (
   email,
   encrypted_password,
   email_confirmed_at,
-  invited_at,
-  confirmation_token,
-  confirmation_sent_at,
-  recovery_token,
-  recovery_sent_at,
-  email_change_token_new,
-  email_change,
-  email_change_sent_at,
-  last_sign_in_at,
   raw_app_meta_data,
   raw_user_meta_data,
-  is_super_admin,
   created_at,
-  updated_at,
-  phone,
-  phone_confirmed_at,
-  phone_change,
-  phone_change_token,
-  phone_change_sent_at,
-  email_change_token_current,
-  email_change_confirm_status,
-  banned_until,
-  reauthentication_token,
-  reauthentication_sent_at,
-  is_sso_user,
-  deleted_at
+  updated_at
 ) VALUES (
   '00000000-0000-0000-0000-000000000000',
   gen_random_uuid(),
@@ -48,33 +26,10 @@ INSERT INTO auth.users (
   'admin@loanhub.com',
   crypt('Admin@LoanHub2024!', gen_salt('bf')),
   NOW(),
-  NOW(),
-  '',
-  NOW(),
-  '',
-  NULL,
-  '',
-  '',
-  NULL,
-  NOW(),
   '{"provider": "email", "providers": ["email"]}',
   '{"role": "admin", "full_name": "System Administrator"}',
-  false,
   NOW(),
-  NOW(),
-  '+254700000000',
-  NOW(),
-  '',
-  '',
-  NULL,
-  NOW(),
-  '',
-  0,
-  NULL,
-  '',
-  NULL,
-  false,
-  NULL
+  NOW()
 );
 
 -- Step 3: Create corresponding user profile
