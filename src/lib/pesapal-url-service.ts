@@ -231,40 +231,14 @@ class PesapalURLService {
   }
 
   /**
-   * Open payment URL in new window/tab
+   * Redirect to one-time payment page
    */
   openPaymentURL(paymentUrl: string): void {
     if (typeof window !== 'undefined') {
-      console.log('Opening payment URL:', paymentUrl)
+      console.log('Redirecting to one-time payment page:', paymentUrl)
       
-      // Try to open in new window first
-      const paymentWindow = window.open(
-        paymentUrl,
-        'pesapal_payment',
-        'width=900,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes,menubar=no,toolbar=no'
-      )
-      
-      if (!paymentWindow || paymentWindow.closed) {
-        console.warn('Popup blocked, trying alternative methods...')
-        
-        // Try opening in new tab
-        const newTab = window.open(paymentUrl, '_blank')
-        
-        if (!newTab) {
-          // Last resort: redirect current window
-          console.warn('All popup methods blocked, redirecting current window')
-          if (confirm('Popup blocked. Redirect to payment page?')) {
-            window.location.href = paymentUrl
-          }
-        } else {
-          console.log('Payment opened in new tab')
-        }
-      } else {
-        console.log('Payment opened in new window')
-        
-        // Focus the new window
-        paymentWindow.focus()
-      }
+      // Redirect to the one-time payment page
+      window.location.href = paymentUrl
     }
   }
 

@@ -55,9 +55,9 @@ class MockPesapalURLService {
       const merchantReference = this.generateMerchantReference('PROC')
       const orderTrackingId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
       
-      // Generate a mock payment URL that will actually work
+      // Generate a one-time payment page URL
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-      const mockPaymentUrl = `${baseUrl}/mock-payment?order=${orderTrackingId}&merchant=${merchantReference}&amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
+      const mockPaymentUrl = `${baseUrl}/payment/one-time?order=${orderTrackingId}&merchant=${merchantReference}&amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
       
       // Fallback URL in case the mock page doesn't work
       const fallbackUrl = `https://www.pesapal.com/demo?amount=${paymentRequest.amount}&phone=${paymentRequest.phoneNumber}&method=${paymentRequest.paymentMethod}`
@@ -107,11 +107,11 @@ class MockPesapalURLService {
   }
 
   /**
-   * Open payment URL in new window/tab
+   * Redirect to one-time payment page
    */
   openPaymentURL(paymentUrl: string): void {
     if (typeof window !== 'undefined') {
-      console.log('Opening payment URL:', paymentUrl)
+      console.log('Redirecting to one-time payment page:', paymentUrl)
       console.log('URL type:', typeof paymentUrl)
       console.log('URL length:', paymentUrl.length)
       
@@ -125,34 +125,9 @@ class MockPesapalURLService {
         return
       }
       
-      // Try to open in new window first
-      const paymentWindow = window.open(
-        paymentUrl,
-        'pesapal_payment',
-        'width=900,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes,menubar=no,toolbar=no'
-      )
-      
-      if (!paymentWindow || paymentWindow.closed) {
-        console.warn('Popup blocked, trying alternative methods...')
-        
-        // Try opening in new tab
-        const newTab = window.open(paymentUrl, '_blank')
-        
-        if (!newTab) {
-          // Last resort: redirect current window
-          console.warn('All popup methods blocked, redirecting current window')
-          if (confirm('Popup blocked. Redirect to payment page?')) {
-            window.location.href = paymentUrl
-          }
-        } else {
-          console.log('Payment opened in new tab')
-        }
-      } else {
-        console.log('Payment opened in new window')
-        
-        // Focus the new window
-        paymentWindow.focus()
-      }
+      // Redirect to the one-time payment page
+      console.log('Redirecting to payment page...')
+      window.location.href = paymentUrl
     } else {
       console.error('Window object not available')
     }

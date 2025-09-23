@@ -455,7 +455,7 @@ export function ProcessingFeePayment({
               </span>
             </div>
             <p className="text-blue-700 text-sm mt-1">
-              Click the button below to open the payment page in a new window. Complete your payment there.
+              Click the button below to go to the payment page. Complete your payment there.
             </p>
           </div>
 
@@ -496,7 +496,7 @@ export function ProcessingFeePayment({
               disabled={!paymentUrl}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              Open Payment Page
+              Go to Payment Page
             </Button>
             
             {/* Direct URL Test */}
