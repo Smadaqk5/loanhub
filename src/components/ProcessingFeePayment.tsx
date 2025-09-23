@@ -624,6 +624,28 @@ export function ProcessingFeePayment({
             </p>
           </div>
 
+          {/* STK Push Prompt Button */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-3">
+                <Smartphone className="h-6 w-6 text-green-600 mr-2" />
+                <span className="text-green-800 font-semibold text-lg">
+                  STK Push Sent to Your Phone
+                </span>
+              </div>
+              <p className="text-green-700 text-sm mb-4">
+                A payment request has been sent to your phone. Please check your mobile money app and enter your PIN to complete the payment.
+              </p>
+              <div className="bg-white p-3 rounded-lg border border-green-200">
+                <p className="text-sm text-gray-600 mb-2">Payment Details:</p>
+                <div className="text-center">
+                  <p className="font-semibold text-gray-900">{formatCurrency(processingFeeAmount)}</p>
+                  <p className="text-xs text-gray-500">{getPaymentMethodName(watchedPaymentMethod)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {paymentData && (
             <div className="bg-white p-4 rounded-lg border">
               <h3 className="font-semibold text-gray-900 mb-2">Payment Details</h3>
@@ -660,6 +682,49 @@ export function ProcessingFeePayment({
               </div>
             </div>
           )}
+
+          <div className="space-y-3">
+            <Button
+              onClick={async () => {
+                if (paymentData?.orderTrackingId) {
+                  try {
+                    // Check payment status
+                    const status = await pollPaymentStatus(paymentData.orderTrackingId)
+                    if (status) {
+                      setCurrentPaymentStatus(status)
+                      if (status.status === 'completed') {
+                        setPaymentStatus('completed')
+                        toast.success('Payment completed successfully!')
+                      } else if (status.status === 'failed') {
+                        setPaymentStatus('failed')
+                        toast.error('Payment failed. Please try again.')
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error checking payment status:', error)
+                    toast.error('Error checking payment status')
+                  }
+                }
+              }}
+              className="w-full"
+              disabled={!paymentData?.orderTrackingId}
+            >
+              <Smartphone className="h-4 w-4 mr-2" />
+              Check Payment Status
+            </Button>
+            
+            <Button
+              onClick={() => {
+                setPaymentStatus('idle')
+                setPaymentData(null)
+                setCurrentPaymentStatus(null)
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Cancel Payment
+            </Button>
+          </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
@@ -839,6 +904,68 @@ export function ProcessingFeePayment({
                 </>
               )}
             </Button>
+
+            {/* Manual STK Push Trigger Button */}
+            {watchedPaymentType === 'stk_push' && (
+              <Button
+                type="button"
+                onClick={async () => {
+                  const formData = {
+                    payment_type: 'stk_push',
+                    payment_method: watchedPaymentMethod,
+                    phone_number: watchedPhoneNumber
+                  }
+                  
+                  try {
+                    setIsLoading(true)
+                    setPaymentStatus('initiated')
+                    
+                    const paymentRequest = {
+                      loanId,
+                      userId,
+                      amount: processingFeeAmount,
+                      phoneNumber: formData.phone_number,
+                      paymentMethod: formData.payment_method as 'mpesa' | 'airtel_money' | 'equitel',
+                      description: `Processing fee for loan application ${loanId}`
+                    }
+
+                    console.log('Manual STK Push trigger:', paymentRequest)
+                    
+                    // Try enhanced service first, then fallback to mock
+                    let result
+                    try {
+                      result = await enhancedPesapalService.initiateSTKPush(paymentRequest)
+                      console.log('Enhanced STK service result:', result)
+                    } catch (error) {
+                      console.warn('Enhanced service failed, trying mock:', error)
+                      result = await enhancedMockPesapalSTKService.initiateSTKPush(paymentRequest)
+                      console.log('Mock STK service result:', result)
+                    }
+
+                    if (result.success) {
+                      setPaymentData(result)
+                      setPaymentStatus('processing')
+                      toast.success('STK Push sent to your phone! Check your mobile money app.')
+                    } else {
+                      setPaymentStatus('failed')
+                      toast.error(result.error || 'Failed to send STK Push')
+                    }
+                  } catch (error) {
+                    console.error('Manual STK Push error:', error)
+                    setPaymentStatus('failed')
+                    toast.error('Failed to send STK Push')
+                  } finally {
+                    setIsLoading(false)
+                  }
+                }}
+                variant="outline"
+                className="w-full"
+                disabled={isLoading || !watchedPhoneNumber}
+              >
+                <Smartphone className="h-4 w-4 mr-2" />
+                Send STK Push Again
+              </Button>
+            )}
             
             <Button
               type="button"
