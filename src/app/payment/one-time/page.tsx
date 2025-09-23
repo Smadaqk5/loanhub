@@ -1,6 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -25,7 +28,7 @@ interface PaymentData {
   status: 'pending' | 'processing' | 'completed' | 'failed'
 }
 
-export default function OneTimePaymentPage() {
+function OneTimePaymentContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null)
@@ -309,55 +312,77 @@ export default function OneTimePaymentPage() {
               )}
 
               {paymentStatus === 'processing' && (
+                  <Button
+                    onClick={() => {
+                      // Check payment status
+                      toast.info('Checking payment status...')
+                      // Simulate status check
+                      setTimeout(() => {
+                        const random = Math.random()
+                        if (random > 0.7) {
+                          setPaymentStatus('completed')
+                          toast.success('Payment completed!')
+                        } else if (random > 0.3) {
+                          setPaymentStatus('failed')
+                          toast.error('Payment failed')
+                        } else {
+                          toast.info('Payment still processing...')
+                        }
+                      }, 2000)
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Check Status
+                  </Button>
+                )}
+
                 <Button
                   onClick={() => {
-                    // Check payment status
-                    toast.info('Checking payment status...')
-                    // Simulate status check
-                    setTimeout(() => {
-                      const random = Math.random()
-                      if (random > 0.7) {
-                        setPaymentStatus('completed')
-                        toast.success('Payment completed!')
-                      } else if (random > 0.3) {
-                        setPaymentStatus('failed')
-                        toast.error('Payment failed')
-                      } else {
-                        toast.info('Payment still processing...')
-                      }
-                    }, 2000)
+                    if (window.opener) {
+                      window.close()
+                    } else {
+                      router.push('/')
+                    }
                   }}
                   variant="outline"
                   className="w-full"
                 >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Check Status
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {window.opener ? 'Close Window' : 'Go Home'}
                 </Button>
-              )}
+              </div>
 
-              <Button
-                onClick={() => {
-                  if (window.opener) {
-                    window.close()
-                  } else {
-                    router.push('/')
-                  }
-                }}
-                variant="outline"
-                className="w-full"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {window.opener ? 'Close Window' : 'Go Home'}
-              </Button>
-            </div>
+              {/* Debug Info */}
+              <div className="text-xs text-gray-500 text-center">
+                Order: {paymentData.orderId} | Status: {paymentStatus.toUpperCase()}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+}
 
-            {/* Debug Info */}
-            <div className="text-xs text-gray-500 text-center">
-              Order: {paymentData.orderId} | Status: {paymentStatus.toUpperCase()}
-            </div>
-          </CardContent>
-        </Card>
+// Loading fallback component
+function PaymentPageLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+        <p className="text-gray-600">Loading payment details...</p>
       </div>
     </div>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function OneTimePaymentPage() {
+  return (
+    <Suspense fallback={<PaymentPageLoading />}>
+      <OneTimePaymentContent />
+    </Suspense>
   )
 }
