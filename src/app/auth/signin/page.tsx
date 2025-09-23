@@ -49,9 +49,19 @@ export default function SignInPage() {
         return
       }
       
-      // Refresh auth state to ensure user is logged in
-      console.log('Reloading page...')
-      window.location.reload()
+      // Successfully signed in - redirect to dashboard
+      console.log('Sign in successful, redirecting to dashboard...')
+      
+      // Check if user is admin and redirect accordingly
+      const isAdmin = result.data?.user?.role === 'admin' || result.data?.user?.user_metadata?.role === 'admin'
+      
+      if (isAdmin) {
+        console.log('Admin user detected, redirecting to admin dashboard')
+        router.push('/admin')
+      } else {
+        console.log('Regular user, redirecting to user dashboard')
+        router.push('/dashboard')
+      }
     } catch (err: any) {
       console.error('Sign in error:', err)
       setError(err.message || 'Invalid email or password')
