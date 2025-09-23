@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { signIn } from '@/lib/auth'
 import { CreditCard, Eye, EyeOff } from 'lucide-react'
-import { CredentialsDisplay } from '@/components/CredentialsDisplay'
 
 const signInSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -79,8 +78,6 @@ export default function SignInPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md space-y-6">
-        {/* Test Credentials Display */}
-        <CredentialsDisplay />
         
         <Card>
           <CardHeader>
