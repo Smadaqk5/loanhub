@@ -53,12 +53,12 @@ export default function SignUpPage() {
         kra_pin: data.kra_pin,
       })
 
-      // Redirect to loan application or dashboard
+      // Redirect to dashboard after successful sign up
       const returnUrl = new URLSearchParams(window.location.search).get('returnUrl')
       if (returnUrl) {
         router.push(returnUrl)
       } else {
-        router.push('/loans/apply')
+        router.push('/dashboard')
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during sign up')
