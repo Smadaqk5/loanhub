@@ -21,6 +21,7 @@ import { pesapalService, PaymentRequest, PaymentStatus } from '@/lib/pesapal-ser
 import { pesapalURLService } from '@/lib/pesapal-url-service'
 import { pesapalURLService as mockPesapalURLService } from '@/lib/pesapal-url-service-mock'
 import { mockPesapalSTKService } from '@/lib/pesapal-service-mock'
+import { enhancedPesapalService } from '@/lib/pesapal-service-enhanced'
 import toast from 'react-hot-toast'
 
 const processingFeeSchema = z.object({
@@ -129,25 +130,39 @@ export function ProcessingFeePayment({
         console.log('Payment URL set:', result.paymentUrl)
         toast.success('Payment URL created! Click "Open Payment Page" to proceed.')
       } else {
-        // Initiate STK Push with fallback to mock service
+        // Initiate STK Push with enhanced service and fallback to mock service
         try {
-          console.log('Attempting to initiate STK Push with real Pesapal service...')
-          result = await pesapalService.initiateSTKPush(paymentRequest)
-          console.log('Real Pesapal STK service result:', result)
+          console.log('Attempting to initiate STK Push with enhanced Pesapal service...')
+          result = await enhancedPesapalService.initiateSTKPush(paymentRequest)
+          console.log('Enhanced Pesapal STK service result:', result)
           
-          // If the real service fails, try mock service
+          // If the enhanced service fails, try original service
           if (!result.success) {
-            console.warn('Real Pesapal STK API failed, using mock service. Error:', result.error)
-            result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
-            console.log('Mock STK service result:', result)
+            console.warn('Enhanced Pesapal STK API failed, trying original service. Error:', result.error)
+            result = await pesapalService.initiateSTKPush(paymentRequest)
+            console.log('Original Pesapal STK service result:', result)
+            
+            // If original service also fails, try mock service
+            if (!result.success) {
+              console.warn('Original Pesapal STK API failed, using mock service. Error:', result.error)
+              result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
+              console.log('Mock STK service result:', result)
+            }
           }
         } catch (error) {
-          console.warn('Real Pesapal STK API threw exception, using mock service:', error)
+          console.warn('Enhanced Pesapal STK API threw exception, trying fallback services:', error)
           try {
-            result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
-            console.log('Mock STK service result after exception:', result)
-          } catch (mockError) {
-            console.error('Both real and mock STK services failed:', mockError)
+            // Try original service
+            result = await pesapalService.initiateSTKPush(paymentRequest)
+            console.log('Original service result after exception:', result)
+            
+            if (!result.success) {
+              // Try mock service
+              result = await mockPesapalSTKService.initiateSTKPush(paymentRequest)
+              console.log('Mock STK service result after exception:', result)
+            }
+          } catch (fallbackError) {
+            console.error('All STK services failed:', fallbackError)
             throw new Error('Payment service unavailable. Please try again later.')
           }
         }
@@ -169,7 +184,13 @@ export function ProcessingFeePayment({
           service = result.paymentUrl?.includes('mock') ? mockPesapalURLService : pesapalURLService
         } else {
           // For STK push, determine which service was used
-          service = result.message?.includes('Mock') ? mockPesapalSTKService : pesapalService
+          if (result.message?.includes('Mock')) {
+            service = mockPesapalSTKService
+          } else if (result.message?.includes('enhanced')) {
+            service = enhancedPesapalService
+          } else {
+            service = pesapalService
+          }
         }
         await service.pollPaymentStatus(
           result.orderTrackingId,
