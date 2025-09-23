@@ -36,6 +36,7 @@ export interface User {
   phone_number: string
   email: string
   kra_pin: string
+  role: 'user' | 'admin'
   status: 'active' | 'suspended'
   created_at: string
   updated_at?: string
