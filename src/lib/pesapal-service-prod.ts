@@ -40,10 +40,10 @@ class ProductionPesapalService {
   private tokenExpiry: number | null = null
 
   constructor() {
-    // Use sandbox credentials for development/testing
-    this.baseUrl = 'https://cybqa.pesapal.com/pesapalv3/api'
-    this.consumerKey = 'k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx'
-    this.consumerSecret = 'Tjg4VodFyn1ur9aDMo1fsJvgHQQ='
+    // Use environment variables for credentials
+    this.baseUrl = process.env.NEXT_PUBLIC_PESAPAL_BASE_URL || 'https://cybqa.pesapal.com/pesapalv3/api'
+    this.consumerKey = process.env.PESAPAL_CONSUMER_KEY || 'k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx'
+    this.consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || 'Tjg4VodFyn1ur9aDMo1fsJvgHQQ='
   }
 
   /**

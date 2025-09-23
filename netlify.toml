@@ -63,7 +63,8 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 # Environment variables (these will be set in Netlify dashboard)
-# NEXT_PUBLIC_PESAPAL_BASE_URL
-# NEXT_PUBLIC_PESAPAL_CONSUMER_KEY
-# PESAPAL_CONSUMER_SECRET
+# PESAPAL_CONSUMER_KEY=k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx
+# PESAPAL_CONSUMER_SECRET=Tjg4VodFyn1ur9aDMo1fsJvgHQQ=
+# NEXT_PUBLIC_PESAPAL_BASE_URL=https://cybqa.pesapal.com/pesapalv3/api
+# PESAPAL_BASE_URL=https://cybqa.pesapal.com/pesapalv3/api
 # NEXT_PUBLIC_SITE_URL
