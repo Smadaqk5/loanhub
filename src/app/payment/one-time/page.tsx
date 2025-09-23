@@ -312,58 +312,57 @@ function OneTimePaymentContent() {
               )}
 
               {paymentStatus === 'processing' && (
-                  <Button
-                    onClick={() => {
-                      // Check payment status
-                      toast.info('Checking payment status...')
-                      // Simulate status check
-                      setTimeout(() => {
-                        const random = Math.random()
-                        if (random > 0.7) {
-                          setPaymentStatus('completed')
-                          toast.success('Payment completed!')
-                        } else if (random > 0.3) {
-                          setPaymentStatus('failed')
-                          toast.error('Payment failed')
-                        } else {
-                          toast.info('Payment still processing...')
-                        }
-                      }, 2000)
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    Check Status
-                  </Button>
-                )}
-
                 <Button
                   onClick={() => {
-                    if (window.opener) {
-                      window.close()
-                    } else {
-                      router.push('/')
-                    }
+                    // Check payment status
+                    toast.info('Checking payment status...')
+                    // Simulate status check
+                    setTimeout(() => {
+                      const random = Math.random()
+                      if (random > 0.7) {
+                        setPaymentStatus('completed')
+                        toast.success('Payment completed!')
+                      } else if (random > 0.3) {
+                        setPaymentStatus('failed')
+                        toast.error('Payment failed')
+                      } else {
+                        toast.info('Payment still processing...')
+                      }
+                    }, 2000)
                   }}
                   variant="outline"
                   className="w-full"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  {window.opener ? 'Close Window' : 'Go Home'}
+                  <Clock className="h-4 w-4 mr-2" />
+                  Check Status
                 </Button>
-              </div>
+              )}
 
-              {/* Debug Info */}
-              <div className="text-xs text-gray-500 text-center">
-                Order: {paymentData.orderId} | Status: {paymentStatus.toUpperCase()}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Button
+                onClick={() => {
+                  if (window.opener) {
+                    window.close()
+                  } else {
+                    router.push('/')
+                  }
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {window.opener ? 'Close Window' : 'Go Home'}
+              </Button>
+            </div>
+
+            {/* Debug Info */}
+            <div className="text-xs text-gray-500 text-center">
+              Order: {paymentData.orderId} | Status: {paymentStatus.toUpperCase()}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    )
-  }
+    </div>
+  )
 }
 
 // Loading fallback component
