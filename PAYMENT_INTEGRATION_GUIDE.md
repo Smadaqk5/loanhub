@@ -17,8 +17,8 @@ npm install
 cp env.example .env
 
 # Update .env with your credentials
-PESAPAL_CONSUMER_KEY=k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx
-PESAPAL_CONSUMER_SECRET=Tjg4VodFyn1ur9aDMo1fsJvgHQQ=
+PESAPAL_CONSUMER_KEY=x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL
+PESAPAL_CONSUMER_SECRET=Q9twNwMHt8a03lFfODhnteP9fnY=
 PESAPAL_BASE_URL=https://cybqa.pesapal.com/pesapalv3/api
 PESAPAL_CALLBACK_URL=http://localhost:3001/pesapal/callback
 PESAPAL_IPN_URL=http://localhost:3001/pesapal/ipn

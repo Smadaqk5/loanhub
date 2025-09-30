@@ -4,8 +4,8 @@
 
 You have received new Pesapal API credentials for Martim Enterprise:
 
-- **Consumer Key:** `k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx`
-- **Consumer Secret:** `Tjg4VodFyn1ur9aDMo1fsJvgHQQ=`
+- **Consumer Key:** `x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL`
+- **Consumer Secret:** `Q9twNwMHt8a03lFfODhnteP9fnY=`
 - **API Base URL:** `https://cybqa.pesapal.com/pesapalv3/api`
 
 ## 🚀 **Environment Variables Setup**
@@ -15,8 +15,8 @@ Create a `.env.local` file in your project root:
 
 ```bash
 # Pesapal API Configuration
-PESAPAL_CONSUMER_KEY=k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx
-PESAPAL_CONSUMER_SECRET=Tjg4VodFyn1ur9aDMo1fsJvgHQQ=
+PESAPAL_CONSUMER_KEY=x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL
+PESAPAL_CONSUMER_SECRET=Q9twNwMHt8a03lFfODhnteP9fnY=
 
 # Pesapal API URLs
 NEXT_PUBLIC_PESAPAL_BASE_URL=https://cybqa.pesapal.com/pesapalv3/api
@@ -34,8 +34,8 @@ Add these environment variables in your Netlify dashboard:
 2. Add the following variables:
 
 ```
-PESAPAL_CONSUMER_KEY = k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx
-PESAPAL_CONSUMER_SECRET = Tjg4VodFyn1ur9aDMo1fsJvgHQQ=
+PESAPAL_CONSUMER_KEY = x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL
+PESAPAL_CONSUMER_SECRET = Q9twNwMHt8a03lFfODhnteP9fnY=
 NEXT_PUBLIC_PESAPAL_BASE_URL = https://cybqa.pesapal.com/pesapalv3/api
 PESAPAL_BASE_URL = https://cybqa.pesapal.com/pesapalv3/api
 ```

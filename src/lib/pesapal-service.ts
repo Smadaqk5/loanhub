@@ -43,8 +43,8 @@ class PesapalService {
   constructor() {
     // Use sandbox credentials for development
     this.baseUrl = 'https://cybqa.pesapal.com/pesapalapi/api'
-    this.consumerKey = 'k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx'
-    this.consumerSecret = 'Tjg4VodFyn1ur9aDMo1fsJvgHQQ='
+    this.consumerKey = process.env.PESAPAL_CONSUMER_KEY || 'x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL'
+    this.consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || 'Q9twNwMHt8a03lFfODhnteP9fnY='
   }
 
   /**

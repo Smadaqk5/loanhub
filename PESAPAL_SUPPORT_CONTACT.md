@@ -13,8 +13,8 @@
 I am writing to request assistance with API integration for **Martim Enterprise**. We received the following credentials but are unable to authenticate with your API system.
 
 ## 🔑 **Credentials Received:**
-- **Consumer Key:** `k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx`
-- **Consumer Secret:** `Tjg4VodFyn1ur9aDMo1fsJvgHQQ=`
+- **Consumer Key:** `x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL`
+- **Consumer Secret:** `Q9twNwMHt8a03lFfODhnteP9fnY=`
 - **Environment:** Sandbox/Testing (please confirm)
 
 ## 🚨 **Issues Encountered:**

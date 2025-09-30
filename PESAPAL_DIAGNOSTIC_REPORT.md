@@ -9,8 +9,8 @@
 ## 📊 **Test Results**
 
 ### **1. Credential Validation**
-- ✅ **Consumer Key Format:** Valid (k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx)
-- ✅ **Consumer Secret Format:** Valid (Tjg4VodFyn1ur9aDMo1fsJvgHQQ=)
+- ✅ **Consumer Key Format:** Valid (x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL)
+- ✅ **Consumer Secret Format:** Valid (Q9twNwMHt8a03lFfODhnteP9fnY=)
 - ✅ **Length Check:** Both credentials meet minimum length requirements
 
 ### **2. API Endpoint Testing**
@@ -55,8 +55,8 @@ Message:
 Hello Pesapal Support,
 
 I received the following credentials for Martim Enterprise:
-- Consumer Key: k7N/1b+DE4Ewgb0fjrGS7q1YwT0+w5Qx
-- Consumer Secret: Tjg4VodFyn1ur9aDMo1fsJvgHQQ=
+- Consumer Key: x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL
+- Consumer Secret: Q9twNwMHt8a03lFfODhnteP9fnY=
 
 However, I'm unable to authenticate with your API. All endpoints return 404 or 500 errors.
 
