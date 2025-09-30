@@ -23,8 +23,8 @@ try {
   
   console.log('📦 Installing dependencies...');
   
-  // Install dependencies
-  execSync('npm ci --production=false', { 
+  // Install dependencies (use npm install instead of npm ci to avoid lock file issues)
+  execSync('npm install', { 
     stdio: 'inherit',
     cwd: process.cwd()
   });

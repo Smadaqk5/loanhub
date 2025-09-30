@@ -1,15 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove static export for API routes support
-  // output: 'export',
-  
   // Enable image optimization
   images: {
     domains: ['localhost'],
   },
-  
-  // Enable server-side features for API routes
-  // trailingSlash: true,
   
   // Disable ESLint during build to avoid path issues
   eslint: {
@@ -22,15 +16,7 @@ const nextConfig = {
   },
   
   // Webpack configuration for better builds
-  webpack: (config, { isServer, dev }) => {
-    // Handle special characters in paths
-    if (process.platform === 'win32') {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-      };
-    }
-    
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -52,17 +38,7 @@ const nextConfig = {
       /Module not found: Can't resolve/,
     ];
     
-    // Handle special characters in paths
-    config.snapshot = {
-      managedPaths: [/^(.+?[\\/]node_modules[\\/])(.+)$/],
-    };
-    
     return config;
-  },
-  
-  // Environment variables
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 }
 

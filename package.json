@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "netlify:build": "node scripts/netlify-build.js",
+    "netlify:build": "npm install && npm run build",
     "netlify:dev": "netlify dev",
     "build:production": "NODE_ENV=production next build",
     "build:netlify": "npm ci && npm run build:production",
