@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "netlify:build": "next build",
+    "netlify:build": "node scripts/netlify-build.js",
     "netlify:dev": "netlify dev",
     "build:production": "NODE_ENV=production next build",
     "build:netlify": "npm ci && npm run build:production",
@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@netlify/plugin-nextjs": "^5.8.0",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20",
     "@types/react": "^19",

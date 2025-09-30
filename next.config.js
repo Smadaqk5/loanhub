@@ -1,15 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static export for Netlify deployment
-  output: 'export',
+  // Remove static export for API routes support
+  // output: 'export',
   
-  // Disable image optimization for static export
+  // Enable image optimization
   images: {
-    unoptimized: true,
+    domains: ['localhost'],
   },
   
-  // Disable server-side features for static export
-  trailingSlash: true,
+  // Enable server-side features for API routes
+  // trailingSlash: true,
   
   // Disable ESLint during build to avoid path issues
   eslint: {
@@ -22,7 +22,15 @@ const nextConfig = {
   },
   
   // Webpack configuration for better builds
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    // Handle special characters in paths
+    if (process.platform === 'win32') {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+      };
+    }
+    
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -41,12 +49,20 @@ const nextConfig = {
     config.ignoreWarnings = [
       /Failed to parse source map/,
       /Critical dependency: the request of a dependency is an expression/,
+      /Module not found: Can't resolve/,
     ];
     
-    // Disable cache to avoid path issues with special characters
-    config.cache = false;
+    // Handle special characters in paths
+    config.snapshot = {
+      managedPaths: [/^(.+?[\\/]node_modules[\\/])(.+)$/],
+    };
     
     return config;
+  },
+  
+  // Environment variables
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 }
 
