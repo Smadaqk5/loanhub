@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Flow Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background: #3B82F6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #2563EB;
+        }
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #3B82F6;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <h1>Payment Flow Test</h1>
+    
+    <div class="test-container">
+        <h2>Test 1: Create Payment Page</h2>
+        <p>This test will create a payment page and verify it opens correctly.</p>
+        <button class="test-button" onclick="testCreatePaymentPage()">Create Payment Page</button>
+        <div id="test1-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 2: Test Payment Page Loading</h2>
+        <p>This test will simulate loading a payment page with different scenarios.</p>
+        <button class="test-button" onclick="testPaymentPageLoading()">Test Loading</button>
+        <div id="test2-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 3: Test localStorage Handling</h2>
+        <p>This test will verify localStorage handling works correctly.</p>
+        <button class="test-button" onclick="testLocalStorageHandling()">Test localStorage</button>
+        <div id="test3-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showResult(testId, message, isError = false) {
+            const resultDiv = document.getElementById(testId);
+            resultDiv.style.display = 'block';
+            resultDiv.className = `test-result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = message;
+        }
+
+        function testCreatePaymentPage() {
+            try {
+                // Simulate creating a payment page
+                const paymentId = `PAY_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                const paymentData = {
+                    paymentId: paymentId,
+                    orderTrackingId: `ORDER_${paymentId}`,
+                    merchantReference: `MERCHANT_${paymentId}`,
+                    amount: 500.00,
+                    currency: 'KES',
+                    phoneNumber: '+254700000000',
+                    paymentMethod: 'mpesa',
+                    description: 'Test payment',
+                    loanId: 'LOAN_123',
+                    userId: 'USER_456',
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+                    paymentUrl: undefined
+                };
+
+                // Store in localStorage
+                localStorage.setItem(`payment_${paymentId}`, JSON.stringify(paymentData));
+
+                // Generate payment URL
+                const paymentUrl = `${window.location.origin}/payment/${encodeURIComponent(paymentId)}`;
+                
+                showResult('test1-result', `
+                    <strong>✅ Payment page created successfully!</strong><br>
+                    Payment ID: ${paymentId}<br>
+                    Payment URL: <a href="${paymentUrl}" target="_blank">${paymentUrl}</a><br>
+                    <button class="test-button" onclick="window.open('${paymentUrl}', '_blank')">Open Payment Page</button>
+                `);
+            } catch (error) {
+                showResult('test1-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        function testPaymentPageLoading() {
+            try {
+                // Test loading payment data from localStorage
+                const testPaymentId = 'TEST_PAYMENT_123';
+                const testPaymentData = {
+                    paymentId: testPaymentId,
+                    orderTrackingId: `ORDER_${testPaymentId}`,
+                    merchantReference: `MERCHANT_${testPaymentId}`,
+                    amount: 1000.00,
+                    currency: 'KES',
+                    phoneNumber: '+254700000000',
+                    paymentMethod: 'mpesa',
+                    description: 'Test loading payment',
+                    loanId: 'LOAN_456',
+                    userId: 'USER_789',
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+                    paymentUrl: undefined
+                };
+
+                // Store test data
+                localStorage.setItem(`payment_${testPaymentId}`, JSON.stringify(testPaymentData));
+
+                // Test loading
+                const storedPayment = localStorage.getItem(`payment_${testPaymentId}`);
+                if (storedPayment) {
+                    const data = JSON.parse(storedPayment);
+                    showResult('test2-result', `
+                        <strong>✅ Payment data loaded successfully!</strong><br>
+                        Payment ID: ${data.paymentId}<br>
+                        Amount: ${data.amount} ${data.currency}<br>
+                        Status: ${data.status}<br>
+                        Phone: ${data.phoneNumber}
+                    `);
+                } else {
+                    throw new Error('Failed to load payment data from localStorage');
+                }
+            } catch (error) {
+                showResult('test2-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        function testLocalStorageHandling() {
+            try {
+                // Test localStorage availability
+                if (typeof Storage === "undefined") {
+                    throw new Error('localStorage is not supported');
+                }
+
+                // Test storing and retrieving data
+                const testKey = 'test_payment_data';
+                const testData = {
+                    paymentId: 'TEST_123',
+                    amount: 500,
+                    status: 'pending'
+                };
+
+                // Store data
+                localStorage.setItem(testKey, JSON.stringify(testData));
+
+                // Retrieve data
+                const retrievedData = localStorage.getItem(testKey);
+                if (!retrievedData) {
+                    throw new Error('Failed to retrieve data from localStorage');
+                }
+
+                const parsedData = JSON.parse(retrievedData);
+                if (parsedData.paymentId !== testData.paymentId) {
+                    throw new Error('Retrieved data does not match stored data');
+                }
+
+                // Clean up
+                localStorage.removeItem(testKey);
+
+                showResult('test3-result', `
+                    <strong>✅ localStorage handling works correctly!</strong><br>
+                    - Storage is available<br>
+                    - Data can be stored and retrieved<br>
+                    - JSON serialization/deserialization works<br>
+                    - Data integrity is maintained
+                `);
+            } catch (error) {
+                showResult('test3-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

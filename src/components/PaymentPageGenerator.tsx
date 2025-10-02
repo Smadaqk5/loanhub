@@ -40,6 +40,9 @@ export function PaymentPageGenerator({
       if (response.success && response.paymentId && response.paymentUrl) {
         toast.success('Payment page created successfully!')
         onPaymentPageCreated?.(response.paymentId, response.paymentUrl)
+        
+        // Open the payment page in a new tab
+        window.open(response.paymentUrl, '_blank')
       } else {
         throw new Error(response.error || 'Failed to create payment page')
       }
@@ -192,6 +195,9 @@ export function QuickPaymentPageGenerator() {
           paymentUrl: response.paymentUrl
         })
         toast.success('Processing fee payment page created!')
+        
+        // Open the payment page in a new tab
+        window.open(response.paymentUrl, '_blank')
       } else {
         throw new Error(response.error || 'Failed to create payment page')
       }
@@ -220,6 +226,9 @@ export function QuickPaymentPageGenerator() {
           paymentUrl: response.paymentUrl
         })
         toast.success('Loan repayment page created!')
+        
+        // Open the payment page in a new tab
+        window.open(response.paymentUrl, '_blank')
       } else {
         throw new Error(response.error || 'Failed to create payment page')
       }

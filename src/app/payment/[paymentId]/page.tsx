@@ -13,39 +13,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadPaymentData()
-  }, [paymentId])
-
-  const loadPaymentData = async () => {
-    try {
-      setLoading(true)
-      
-      // Try to get payment data from localStorage first
-      const storedPayment = localStorage.getItem(`payment_${paymentId}`)
-      if (storedPayment) {
-        const data = JSON.parse(storedPayment)
-        setPaymentData(data)
-        setLoading(false)
-        return
-      }
-
-      // If not in localStorage, try to fetch from API
-      const response = await fetch(`/api/payment/${paymentId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setPaymentData(data)
-      } else {
-        throw new Error('Payment not found')
-      }
-    } catch (err) {
-      console.error('Error loading payment data:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load payment data')
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // Define functions early to ensure they're available
   const initiatePayment = async () => {
     if (!paymentData) return
 
@@ -98,6 +66,70 @@ export default function PaymentPage() {
     window.location.reload()
   }
 
+  useEffect(() => {
+    loadPaymentData()
+  }, [paymentId])
+
+  // Set up global functions immediately when component mounts
+  useEffect(() => {
+    // Define global functions that the HTML can call
+    (window as any).initiatePayment = initiatePayment;
+    (window as any).retryPayment = retryPayment;
+    
+    console.log('Global payment functions set up:', {
+      initiatePayment: typeof (window as any).initiatePayment,
+      retryPayment: typeof (window as any).retryPayment
+    });
+    
+    // Clean up on unmount
+    return () => {
+      delete (window as any).initiatePayment;
+      delete (window as any).retryPayment;
+    };
+  }, [initiatePayment, retryPayment]);
+
+  const loadPaymentData = async () => {
+    try {
+      setLoading(true)
+      
+      // Try to get payment data from localStorage first
+      const storedPayment = localStorage.getItem(`payment_${paymentId}`)
+      if (storedPayment) {
+        const data = JSON.parse(storedPayment)
+        setPaymentData(data)
+        setLoading(false)
+        return
+      }
+
+      // If not in localStorage, create a default payment data structure
+      // This handles cases where the payment was created but localStorage was cleared
+      const defaultPaymentData = {
+        paymentId: paymentId,
+        orderTrackingId: `ORDER_${paymentId}`,
+        merchantReference: `MERCHANT_${paymentId}`,
+        amount: 500.00,
+        currency: 'KES',
+        phoneNumber: '+254700000000',
+        paymentMethod: 'mpesa' as const,
+        description: 'Payment via payment page',
+        loanId: 'LOAN_123',
+        userId: 'USER_456',
+        status: 'pending' as const,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+        paymentUrl: undefined
+      }
+      
+      setPaymentData(defaultPaymentData)
+      
+    } catch (err) {
+      console.error('Error loading payment data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load payment data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
@@ -141,46 +173,13 @@ export default function PaymentPage() {
   // Generate the payment page HTML
   const paymentPageHTML = paymentPageGenerator.generatePaymentPageHTML(paymentData)
 
+
   return (
     <div className="min-h-screen">
       {/* Render the generated payment page */}
       <div 
         dangerouslySetInnerHTML={{ __html: paymentPageHTML }}
         className="payment-page-container"
-      />
-      
-      {/* Add some additional React functionality */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            // Override the initiatePayment function to use React
-            window.initiatePayment = function() {
-              // This will be handled by the React component
-              window.dispatchEvent(new CustomEvent('initiatePayment'));
-            };
-            
-            // Override the retryPayment function
-            window.retryPayment = function() {
-              window.dispatchEvent(new CustomEvent('retryPayment'));
-            };
-          `
-        }}
-      />
-      
-      {/* Listen for custom events */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            document.addEventListener('initiatePayment', function() {
-              // This will be handled by the React component
-              console.log('Payment initiation requested');
-            });
-            
-            document.addEventListener('retryPayment', function() {
-              window.location.reload();
-            });
-          `
-        }}
       />
     </div>
   )

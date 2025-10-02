@@ -11,7 +11,12 @@
     "netlify:dev": "netlify dev",
     "build:production": "NODE_ENV=production next build",
     "build:netlify": "npm ci && npm run build:production",
-    "build:clean": "rm -rf .next && npm run build"
+    "build:clean": "rm -rf .next && npm run build",
+    "start:prod": "NODE_ENV=production next start",
+    "setup:production": "node scripts/switch-to-production.js",
+    "test:production": "node scripts/test-production.js",
+    "deploy:check": "npm run lint && npm run build:production",
+    "deploy:netlify": "bash scripts/deploy-netlify.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

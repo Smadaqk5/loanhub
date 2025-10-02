@@ -53,7 +53,12 @@ class PaymentPageService {
 
       // Store payment data in localStorage for tracking
       if (typeof window !== 'undefined') {
-        localStorage.setItem(`payment_${paymentId}`, JSON.stringify(paymentData))
+        try {
+          localStorage.setItem(`payment_${paymentId}`, JSON.stringify(paymentData))
+        } catch (error) {
+          console.warn('Failed to store payment data in localStorage:', error)
+          // Continue without storing in localStorage
+        }
       }
 
       // Generate payment page URL

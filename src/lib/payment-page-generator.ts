@@ -311,6 +311,7 @@ class PaymentPageGenerator {
         <div class="payment-header">
             <h1>${branding.companyName}</h1>
             <p>Complete Your Payment</p>
+            ${process.env.NODE_ENV === 'development' ? '<p style="font-size: 12px; opacity: 0.8; margin-top: 10px;">🔧 Development Mode - Mock Payments</p>' : ''}
         </div>
         
         <div class="payment-content">
@@ -516,6 +517,16 @@ class PaymentPageGenerator {
           startPaymentPolling();
         }
         
+        // Ensure functions are available
+        if (typeof window.initiatePayment !== 'function') {
+          console.warn('initiatePayment function not yet available, will retry...');
+          setTimeout(() => {
+            if (typeof window.initiatePayment !== 'function') {
+              console.error('initiatePayment function still not available after retry');
+            }
+          }, 1000);
+        }
+        
         ${paymentData.expiresAt ? this.generateTimerScript(paymentData.expiresAt) : ''}
       });
       
@@ -577,37 +588,23 @@ class PaymentPageGenerator {
         }
       }
       
-      // Initiate payment
-      async function initiatePayment() {
-        try {
-          const response = await fetch('/api/payment/initiate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              paymentId: paymentId,
-              orderTrackingId: orderTrackingId
-            })
-          });
-          
-          const data = await response.json();
-          
-          if (data.success) {
-            updatePaymentStatus('pending');
-            startPaymentPolling();
-          } else {
-            alert('Payment initiation failed: ' + data.error);
-          }
-        } catch (error) {
-          console.error('Payment initiation error:', error);
-          alert('Payment initiation failed. Please try again.');
+      // Initiate payment - this will be overridden by React component
+      function initiatePayment() {
+        if (typeof window.initiatePayment === 'function') {
+          window.initiatePayment();
+        } else {
+          console.error('initiatePayment function not available');
+          alert('Payment initiation is not available. Please refresh the page.');
         }
       }
       
-      // Retry payment
+      // Retry payment - this will be overridden by React component
       function retryPayment() {
-        location.reload();
+        if (typeof window.retryPayment === 'function') {
+          window.retryPayment();
+        } else {
+          location.reload();
+        }
       }
       
       // Get status text

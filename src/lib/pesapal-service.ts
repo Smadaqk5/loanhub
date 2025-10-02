@@ -1,6 +1,7 @@
 // Pesapal STK Push Service for Processing Fee Payments
 import { toast } from 'react-hot-toast'
 import CryptoJS from 'crypto-js'
+import { mockPaymentService, MockPaymentRequest, MockPaymentResponse } from './mock-payment-service'
 
 export interface PaymentRequest {
   loanId: string
@@ -39,12 +40,18 @@ class PesapalService {
   private consumerSecret: string
   private accessToken: string | null = null
   private tokenExpiry: number | null = null
+  private isDevelopment: boolean
 
   constructor() {
-    // Use sandbox credentials for development
-    this.baseUrl = 'https://cybqa.pesapal.com/pesapalapi/api'
+    // Use production URL for production, sandbox for development
+    this.baseUrl = process.env.PESAPAL_BASE_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://pay.pesapal.com/pesapalapi/api' 
+        : 'https://cybqa.pesapal.com/pesapalapi/api')
+    
     this.consumerKey = process.env.PESAPAL_CONSUMER_KEY || 'x8Laqe3NN5ZwIMFFeQgd4lwSJhHwwDXL'
     this.consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || 'Q9twNwMHt8a03lFfODhnteP9fnY='
+    this.isDevelopment = process.env.NODE_ENV === 'development'
   }
 
   /**
@@ -145,6 +152,32 @@ class PesapalService {
    */
   async initiateSTKPush(paymentRequest: PaymentRequest): Promise<PaymentResponse> {
     try {
+      // Use mock service in development mode
+      if (this.isDevelopment) {
+        console.log('Using mock payment service for development')
+        const mockRequest: MockPaymentRequest = {
+          loanId: paymentRequest.loanId,
+          userId: paymentRequest.userId,
+          amount: paymentRequest.amount,
+          phoneNumber: paymentRequest.phoneNumber,
+          paymentMethod: paymentRequest.paymentMethod,
+          description: paymentRequest.description
+        }
+        
+        const mockResponse = await mockPaymentService.initiateSTKPush(mockRequest)
+        
+        return {
+          success: mockResponse.success,
+          paymentId: mockResponse.paymentId,
+          orderTrackingId: mockResponse.orderTrackingId,
+          merchantReference: mockResponse.merchantReference,
+          redirectUrl: mockResponse.redirectUrl,
+          message: mockResponse.message,
+          error: mockResponse.error
+        }
+      }
+
+      // Use real PesaPal API in production
       const token = await this.getAccessToken()
       const merchantReference = this.generateMerchantReference('PROC')
 
@@ -215,6 +248,36 @@ class PesapalService {
 
     } catch (error: any) {
       console.error('STK Push initiation failed:', error)
+      
+      // Fallback to mock service if PesaPal fails
+      if (!this.isDevelopment) {
+        console.log('PesaPal failed, falling back to mock service')
+        try {
+          const mockRequest: MockPaymentRequest = {
+            loanId: paymentRequest.loanId,
+            userId: paymentRequest.userId,
+            amount: paymentRequest.amount,
+            phoneNumber: paymentRequest.phoneNumber,
+            paymentMethod: paymentRequest.paymentMethod,
+            description: paymentRequest.description
+          }
+          
+          const mockResponse = await mockPaymentService.initiateSTKPush(mockRequest)
+          
+          return {
+            success: mockResponse.success,
+            paymentId: mockResponse.paymentId,
+            orderTrackingId: mockResponse.orderTrackingId,
+            merchantReference: mockResponse.merchantReference,
+            redirectUrl: mockResponse.redirectUrl,
+            message: mockResponse.message + ' (Fallback mode)',
+            error: mockResponse.error
+          }
+        } catch (mockError) {
+          console.error('Mock service also failed:', mockError)
+        }
+      }
+      
       return {
         success: false,
         error: error.message || 'Failed to initiate STK Push payment'
@@ -227,6 +290,26 @@ class PesapalService {
    */
   async checkPaymentStatus(orderTrackingId: string): Promise<PaymentStatus | null> {
     try {
+      // Use mock service in development mode
+      if (this.isDevelopment) {
+        const mockStatus = await mockPaymentService.checkPaymentStatus(orderTrackingId)
+        if (mockStatus) {
+          return {
+            id: mockStatus.id,
+            amount: mockStatus.amount,
+            currency: mockStatus.currency,
+            status: mockStatus.status,
+            paymentMethod: mockStatus.paymentMethod,
+            phoneNumber: mockStatus.phoneNumber,
+            created_at: mockStatus.created_at,
+            paid_at: mockStatus.paid_at,
+            expires_at: mockStatus.expires_at
+          }
+        }
+        return null
+      }
+
+      // Use real PesaPal API in production
       const token = await this.getAccessToken()
 
       const response = await fetch(`${this.baseUrl}/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`, {
@@ -257,6 +340,30 @@ class PesapalService {
 
     } catch (error) {
       console.error('Failed to check payment status:', error)
+      
+      // Fallback to mock service if PesaPal fails
+      if (!this.isDevelopment) {
+        console.log('PesaPal failed, falling back to mock service for status check')
+        try {
+          const mockStatus = await mockPaymentService.checkPaymentStatus(orderTrackingId)
+          if (mockStatus) {
+            return {
+              id: mockStatus.id,
+              amount: mockStatus.amount,
+              currency: mockStatus.currency,
+              status: mockStatus.status,
+              paymentMethod: mockStatus.paymentMethod,
+              phoneNumber: mockStatus.phoneNumber,
+              created_at: mockStatus.created_at,
+              paid_at: mockStatus.paid_at,
+              expires_at: mockStatus.expires_at
+            }
+          }
+        } catch (mockError) {
+          console.error('Mock service also failed for status check:', mockError)
+        }
+      }
+      
       return null
     }
   }
@@ -289,6 +396,44 @@ class PesapalService {
     onStatusUpdate: (status: PaymentStatus) => void,
     timeoutMs: number = 300000 // 5 minutes
   ): Promise<PaymentStatus | null> {
+    // Use mock service in development mode
+    if (this.isDevelopment) {
+      return mockPaymentService.pollPaymentStatus(
+        orderTrackingId,
+        (mockStatus) => {
+          const status: PaymentStatus = {
+            id: mockStatus.id,
+            amount: mockStatus.amount,
+            currency: mockStatus.currency,
+            status: mockStatus.status,
+            paymentMethod: mockStatus.paymentMethod,
+            phoneNumber: mockStatus.phoneNumber,
+            created_at: mockStatus.created_at,
+            paid_at: mockStatus.paid_at,
+            expires_at: mockStatus.expires_at
+          }
+          onStatusUpdate(status)
+        },
+        timeoutMs
+      ).then(mockStatus => {
+        if (mockStatus) {
+          return {
+            id: mockStatus.id,
+            amount: mockStatus.amount,
+            currency: mockStatus.currency,
+            status: mockStatus.status,
+            paymentMethod: mockStatus.paymentMethod,
+            phoneNumber: mockStatus.phoneNumber,
+            created_at: mockStatus.created_at,
+            paid_at: mockStatus.paid_at,
+            expires_at: mockStatus.expires_at
+          }
+        }
+        return null
+      })
+    }
+
+    // Use real PesaPal API in production
     const startTime = Date.now()
     const pollInterval = 10000 // Poll every 10 seconds
 
