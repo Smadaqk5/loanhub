@@ -49,9 +49,23 @@ export default function PaymentPage() {
         setPaymentData(updatedPayment)
         localStorage.setItem(`payment_${paymentId}`, JSON.stringify(updatedPayment))
         
-        // If there's a payment URL, redirect to it
+        // Handle payment URL or window opening
         if (result.paymentUrl) {
-          window.location.href = result.paymentUrl
+          // For mock payments, open a new window instead of redirecting
+          if (result.paymentUrl.includes('mock-payment-window')) {
+            const paymentWindow = window.open(
+              result.paymentUrl,
+              'pesapal_payment',
+              'width=500,height=600,scrollbars=yes,resizable=yes'
+            )
+            
+            if (!paymentWindow) {
+              alert('Please allow popups and try again, or complete payment manually.')
+            }
+          } else {
+            // For real PesaPal payments, redirect
+            window.location.href = result.paymentUrl
+          }
         }
       } else {
         throw new Error(result.error || 'Payment initiation failed')
@@ -65,28 +79,6 @@ export default function PaymentPage() {
   const retryPayment = () => {
     window.location.reload()
   }
-
-  useEffect(() => {
-    loadPaymentData()
-  }, [paymentId])
-
-  // Set up global functions immediately when component mounts
-  useEffect(() => {
-    // Define global functions that the HTML can call
-    (window as any).initiatePayment = initiatePayment;
-    (window as any).retryPayment = retryPayment;
-    
-    console.log('Global payment functions set up:', {
-      initiatePayment: typeof (window as any).initiatePayment,
-      retryPayment: typeof (window as any).retryPayment
-    });
-    
-    // Clean up on unmount
-    return () => {
-      delete (window as any).initiatePayment;
-      delete (window as any).retryPayment;
-    };
-  }, [initiatePayment, retryPayment]);
 
   const loadPaymentData = async () => {
     try {
@@ -129,6 +121,46 @@ export default function PaymentPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadPaymentData()
+  }, [paymentId])
+
+  // Set up global functions immediately when component mounts
+  useEffect(() => {
+    // Define global functions that the HTML can call
+    (window as any).initiatePayment = initiatePayment;
+    (window as any).retryPayment = retryPayment;
+    
+    console.log('Global payment functions set up:', {
+      initiatePayment: typeof (window as any).initiatePayment,
+      retryPayment: typeof (window as any).retryPayment
+    });
+
+    // Listen for messages from payment window
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'PAYMENT_COMPLETED') {
+        console.log('Payment completed:', event.data.paymentId);
+        // Reload payment data to get updated status
+        loadPaymentData();
+      } else if (event.data.type === 'PAYMENT_FAILED') {
+        console.log('Payment failed:', event.data.paymentId);
+        // Reload payment data to get updated status
+        loadPaymentData();
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    // Clean up on unmount
+    return () => {
+      delete (window as any).initiatePayment;
+      delete (window as any).retryPayment;
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [initiatePayment, retryPayment, loadPaymentData]);
 
   if (loading) {
     return (

@@ -19,7 +19,7 @@ export function PaymentPageGenerator({
     loanId: '',
     userId: '',
     amount: 0,
-    phoneNumber: '',
+    phoneNumber: '+254700000000',
     paymentMethod: 'mpesa',
     description: ''
   })

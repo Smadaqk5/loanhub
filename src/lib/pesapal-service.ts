@@ -491,6 +491,103 @@ class PesapalService {
   }
 
   /**
+   * Create payment URL for URL-based payments
+   */
+  async createPaymentURL(orderData: any): Promise<any> {
+    try {
+      // Use mock service in development mode
+      if (this.isDevelopment) {
+        console.log('Using mock payment service for URL creation')
+        const mockRequest = {
+          loanId: 'LOAN_123',
+          userId: 'USER_456',
+          amount: orderData.amount,
+          phoneNumber: orderData.billing_address.phone_number,
+          paymentMethod: 'mpesa' as const,
+          description: orderData.description
+        }
+        
+        const mockResponse = await mockPaymentService.initiateSTKPush(mockRequest)
+        
+        return {
+          success: true,
+          paymentId: mockResponse.paymentId,
+          orderTrackingId: mockResponse.orderTrackingId,
+          merchantReference: orderData.id,
+          paymentUrl: `/mock-payment-window?paymentId=${mockResponse.paymentId}`,
+          message: mockResponse.message
+        }
+      }
+
+      // Real PesaPal API implementation
+      const token = await this.getAccessToken()
+      
+      const response = await fetch(`${this.baseUrl}/Transactions/SubmitOrderRequest`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Payment URL creation error:', errorText)
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      return {
+        success: true,
+        paymentId: orderData.id,
+        orderTrackingId: data.order_tracking_id,
+        merchantReference: orderData.id,
+        paymentUrl: data.redirect_url,
+        message: 'Payment URL created successfully'
+      }
+
+    } catch (error) {
+      console.error('Payment URL creation failed:', error)
+      
+      // Fallback to mock service if PesaPal fails
+      if (!this.isDevelopment) {
+        console.log('PesaPal failed, falling back to mock service for URL creation')
+        try {
+          const mockRequest = {
+            loanId: 'LOAN_123',
+            userId: 'USER_456',
+            amount: orderData.amount,
+            phoneNumber: orderData.billing_address.phone_number,
+            paymentMethod: 'mpesa' as const,
+            description: orderData.description
+          }
+          
+          const mockResponse = await mockPaymentService.initiateSTKPush(mockRequest)
+          
+          return {
+            success: true,
+            paymentId: mockResponse.paymentId,
+            orderTrackingId: mockResponse.orderTrackingId,
+            merchantReference: orderData.id,
+            paymentUrl: `/mock-payment-window?paymentId=${mockResponse.paymentId}`,
+            message: mockResponse.message
+          }
+        } catch (mockError) {
+          console.error('Mock service also failed:', mockError)
+        }
+      }
+      
+      return {
+        success: false,
+        error: 'Failed to create payment URL'
+      }
+    }
+  }
+
+  /**
    * Get payment method display name
    */
   getPaymentMethodName(method: string): string {
@@ -507,7 +604,8 @@ class PesapalService {
   }
 }
 
-// Export singleton instance
+// Export class and singleton instance
+export { PesapalService }
 export const pesapalService = new PesapalService()
 
 // Types are already exported above

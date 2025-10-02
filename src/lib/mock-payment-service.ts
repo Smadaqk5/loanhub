@@ -95,14 +95,8 @@ class MockPaymentService {
         expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
       }
 
-      // Store in localStorage for tracking
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(`payment_${paymentId}`, JSON.stringify(paymentData))
-        } catch (error) {
-          console.warn('Failed to store payment data in localStorage:', error)
-        }
-      }
+      // Store payment data (client-side storage will be handled by the client)
+      console.log('Mock payment data created:', paymentData)
 
       // Simulate different outcomes based on amount
       let status: 'pending' | 'completed' | 'failed' = 'pending'
@@ -120,13 +114,11 @@ class MockPaymentService {
           paidAt: new Date().toISOString()
         }
         
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem(`payment_${paymentId}`, JSON.stringify(completedPayment))
-          } catch (error) {
-            console.warn('Failed to update payment data in localStorage:', error)
-          }
-        }
+        console.log('Mock payment completed:', completedPayment)
+      } else {
+        // For larger amounts, simulate opening external window
+        message = 'Payment window will open. Please complete payment in the opened window.'
+        console.log('Mock payment window should open for payment:', paymentId)
       }
 
       return {
@@ -135,6 +127,7 @@ class MockPaymentService {
         orderTrackingId: orderTrackingId,
         merchantReference: merchantReference,
         redirectUrl: `${this.baseUrl}/payment/${paymentId}`,
+        paymentUrl: paymentRequest.amount > 100 ? `/mock-payment-window?paymentId=${paymentId}` : undefined,
         message: message
       }
 

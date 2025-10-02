@@ -1,6 +1,7 @@
 // Pesapal URL-based Payment Service
 // This service creates payment URLs that can be opened in new tabs/windows
 import CryptoJS from 'crypto-js'
+import { mockPaymentService } from './mock-payment-service'
 
 export interface PaymentRequest {
   loanId: string
@@ -39,6 +40,7 @@ class PesapalURLService {
   private consumerSecret: string
   private accessToken: string | null = null
   private tokenExpiry: number | null = null
+  private isDevelopment: boolean
 
   constructor() {
     // Use environment variables for credentials
@@ -47,8 +49,9 @@ class PesapalURLService {
     this.consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || 'Q9twNwMHt8a03lFfODhnteP9fnY='
     
     // Check if we should use mock service (for development)
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      console.log('Development environment detected - real Pesapal API may fail, mock service will be used as fallback')
+    this.isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    if (this.isDevelopment) {
+      console.log('Development environment detected - using mock service')
     }
   }
 
@@ -62,23 +65,18 @@ class PesapalURLService {
     }
 
     try {
-      // Pesapal v3 uses POST with JSON body for token request
-      const response = await fetch(`${this.baseUrl}/Auth/RequestToken`, {
-        method: 'POST',
+      // Use server-side API route to get token (avoids CORS issues)
+      const response = await fetch('/api/pesapal/token', {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          consumer_key: this.consumerKey,
-          consumer_secret: this.consumerSecret
-        })
+        }
       })
 
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Pesapal token response error:', errorText)
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
@@ -153,6 +151,21 @@ class PesapalURLService {
    */
   async createPaymentURL(paymentRequest: PaymentRequest): Promise<PaymentResponse> {
     try {
+      // Use mock service in development mode
+      if (this.isDevelopment) {
+        console.log('Using mock payment service for URL creation')
+        const mockResponse = await mockPaymentService.initiateSTKPush(paymentRequest)
+        
+        return {
+          success: true,
+          paymentId: mockResponse.paymentId,
+          orderTrackingId: mockResponse.orderTrackingId,
+          merchantReference: mockResponse.merchantReference,
+          paymentUrl: paymentRequest.amount > 100 ? `/mock-payment-window?paymentId=${mockResponse.paymentId}` : undefined,
+          message: mockResponse.message
+        }
+      }
+
       const token = await this.getAccessToken()
       const merchantReference = this.generateMerchantReference('PROC')
 
@@ -179,10 +192,9 @@ class PesapalURLService {
         }
       }
 
-      const response = await fetch(`${this.baseUrl}/Transactions/SubmitOrderRequest`, {
+      const response = await fetch('/api/pesapal/create-payment-url', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
@@ -247,12 +259,31 @@ class PesapalURLService {
    */
   async checkPaymentStatus(orderTrackingId: string): Promise<PaymentStatus | null> {
     try {
+      // Use mock service in development mode
+      if (this.isDevelopment) {
+        console.log('Using mock payment service for status check')
+        const mockStatus = await mockPaymentService.checkPaymentStatus(orderTrackingId)
+        if (mockStatus) {
+          return {
+            id: mockStatus.id,
+            amount: mockStatus.amount,
+            currency: mockStatus.currency,
+            status: mockStatus.status,
+            paymentMethod: mockStatus.paymentMethod,
+            phoneNumber: mockStatus.phoneNumber,
+            created_at: mockStatus.created_at,
+            paid_at: mockStatus.paid_at,
+            expires_at: mockStatus.expires_at
+          }
+        }
+        return null
+      }
+
       const token = await this.getAccessToken()
 
-      const response = await fetch(`${this.baseUrl}/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`, {
+      const response = await fetch(`/api/pesapal/payment-status?orderTrackingId=${orderTrackingId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         }
       })
