@@ -1,6 +1,6 @@
 [build]
   # Build command for Next.js with API routes
-  command = "npm run build:netlify"
+  command = "npm run build"
   
   # Publish directory
   publish = ".next"
@@ -15,7 +15,7 @@
   # Build environment
   NODE_ENV = "production"
 
-# Redirect rules for Next.js
+# Redirect rules for Next.js API routes
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"

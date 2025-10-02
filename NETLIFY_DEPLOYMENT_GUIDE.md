@@ -1,221 +1,196 @@
-# Netlify Deployment Guide
+# Netlify Deployment Guide for STK Push Payment System
 
-Complete guide to deploy your Loan Hub application to Netlify with PesaPal integration.
+## 🚀 Quick Deployment Steps
 
-## 🚀 Quick Deploy (5 minutes)
+### 1. Connect to Netlify
 
-### Step 1: Connect to Netlify
-1. Go to [Netlify](https://netlify.com)
-2. Click "New site from Git"
-3. Connect your GitHub repository
-4. Select your `loan-hub` repository
+1. **Go to Netlify**: https://app.netlify.com/
+2. **Click "New site from Git"**
+3. **Connect GitHub** and select your repository: `Smadaqk5/loanhub`
+4. **Configure build settings**:
+   - Build command: `npm run build`
+   - Publish directory: `.next`
+   - Node version: `18`
 
-### Step 2: Configure Build Settings
-```yaml
-Build command: npm run build:netlify
-Publish directory: .next
-```
+### 2. Environment Variables
 
-### Step 3: Set Environment Variables
-Go to Site Settings > Environment Variables and add:
+Add these environment variables in Netlify dashboard:
 
-```env
-NODE_ENV=production
-PESAPAL_CONSUMER_KEY=your_production_consumer_key
-PESAPAL_CONSUMER_SECRET=your_production_consumer_secret
-NEXT_PUBLIC_APP_URL=https://your-site-name.netlify.app
-NEXTAUTH_SECRET=your_secure_random_string
-NEXTAUTH_URL=https://your-site-name.netlify.app
-```
-
-### Step 4: Deploy
-Click "Deploy site" and wait for the build to complete.
-
-## 📋 Detailed Steps
-
-### 1. Prepare Your Repository
-
-Make sure your code is pushed to GitHub:
+#### Required Variables:
 ```bash
-git add .
-git commit -m "Ready for production deployment"
-git push origin main
+# App Configuration
+NEXT_PUBLIC_BASE_URL=https://your-site-name.netlify.app
+NEXTAUTH_SECRET=your_secure_random_string_here
+NEXTAUTH_URL=https://your-site-name.netlify.app
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Production Environment
+NODE_ENV=production
 ```
 
-### 2. Netlify Site Configuration
-
-#### Build Settings
-- **Build command**: `npm run build:netlify`
-- **Publish directory**: `.next`
-- **Node version**: `18` (or latest)
-
-#### Environment Variables
-Set these in Netlify Dashboard > Site Settings > Environment Variables:
-
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `NODE_ENV` | `production` | Environment mode |
-| `PESAPAL_CONSUMER_KEY` | `your_key` | PesaPal API key |
-| `PESAPAL_CONSUMER_SECRET` | `your_secret` | PesaPal API secret |
-| `NEXT_PUBLIC_APP_URL` | `https://your-site.netlify.app` | Your Netlify URL |
-| `NEXTAUTH_SECRET` | `random_string` | Secure random string |
-| `NEXTAUTH_URL` | `https://your-site.netlify.app` | Same as APP_URL |
-
-### 3. Domain Configuration
-
-#### Custom Domain (Optional)
-1. Go to Site Settings > Domain Management
-2. Add your custom domain
-3. Update environment variables with new domain
-4. Configure DNS as instructed
-
-#### SSL Certificate
-- Automatically provided by Netlify
-- HTTPS is required for PesaPal production
-
-### 4. Webhook Configuration
-
-Update PesaPal webhook URLs:
-- **Callback URL**: `https://your-site.netlify.app/payment/callback`
-- **IPN URL**: `https://your-site.netlify.app/api/pesapal/ipn`
-
-## 🔧 Netlify Configuration Files
-
-### netlify.toml
-```toml
-[build]
-  command = "npm run build:netlify"
-  publish = ".next"
-
-[build.environment]
-  NODE_VERSION = "18"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-[functions]
-  directory = "netlify/functions"
+#### For Real STK Push (Optional):
+```bash
+# PesaPal Production Credentials
+PESAPAL_CONSUMER_KEY=your_real_consumer_key
+PESAPAL_CONSUMER_SECRET=your_real_consumer_secret
+PESAPAL_PASS_KEY=your_real_pass_key
+PESAPAL_SHORT_CODE=your_real_short_code
+PESAPAL_BASE_URL=https://pay.pesapal.com/pesapalapi/api
 ```
 
-### _redirects
+### 3. Deploy
+
+1. **Click "Deploy site"**
+2. **Wait for build to complete** (usually 2-3 minutes)
+3. **Your site will be live** at `https://your-site-name.netlify.app`
+
+## 🔧 Configuration Details
+
+### Build Settings
+- **Build Command**: `npm run build`
+- **Publish Directory**: `.next`
+- **Node Version**: `18`
+- **Environment**: `production`
+
+### Domain Configuration
+- **Custom Domain**: Optional (you can add your own domain)
+- **SSL**: Automatically enabled by Netlify
+- **HTTPS**: Required for PesaPal production
+
+### API Routes
+- **Payment API**: `/api/payments`
+- **PesaPal API**: `/api/pesapal/*`
+- **Callback URL**: `https://your-site.netlify.app/api/payments/callback`
+
+## 🧪 Testing After Deployment
+
+### 1. Test Basic Functionality
+1. **Visit your site**: `https://your-site-name.netlify.app`
+2. **Go to payment demo**: `/payment-demo`
+3. **Check service mode**: Should show "Development Mode" (mock payments)
+
+### 2. Test Real STK Push (Optional)
+1. **Add PesaPal credentials** to environment variables
+2. **Redeploy** the site
+3. **Test with your phone number** and small amount
+4. **Verify STK Push** is received
+
+### 3. Test Payment Flow
+1. **Create a payment** with small amount
+2. **Check status updates** in real-time
+3. **Verify callbacks** are working
+4. **Test error handling**
+
+## 🔒 Security Considerations
+
+### Environment Variables
+- ✅ **Never commit** `.env.local` to Git
+- ✅ **Use Netlify dashboard** for environment variables
+- ✅ **Rotate credentials** regularly
+- ✅ **Use strong secrets** for NEXTAUTH_SECRET
+
+### HTTPS Requirements
+- ✅ **SSL enabled** by default on Netlify
+- ✅ **HTTPS required** for PesaPal production
+- ✅ **Secure headers** configured in netlify.toml
+
+### API Security
+- ✅ **CORS configured** properly
+- ✅ **Rate limiting** recommended
+- ✅ **Input validation** implemented
+- ✅ **Error handling** secure
+
+## 📱 PesaPal Configuration
+
+### Callback URL
+Set this in your PesaPal merchant dashboard:
 ```
-/api/* /.netlify/functions/:splat 200
-/* /index.html 200
+https://your-site-name.netlify.app/api/payments/callback
 ```
 
-## 🧪 Testing Your Deployment
+### Webhook URL (Optional)
+For real-time notifications:
+```
+https://your-site-name.netlify.app/api/payments/webhook
+```
 
-### 1. Check Build Logs
-- Go to Deploys tab
-- Check build logs for errors
-- Ensure "Build completed successfully"
-
-### 2. Test Payment Flow
-1. Visit your Netlify site
-2. Go to `/generate-payment`
-3. Create a test payment
-4. Verify it works (no mock service messages)
-
-### 3. Monitor Function Logs
-- Go to Functions tab
-- Check API route logs
-- Monitor payment initiation
+### Test Credentials
+For testing, use PesaPal sandbox:
+- **Base URL**: `https://cybqa.pesapal.com/pesapalapi/api`
+- **Test credentials** from PesaPal dashboard
 
 ## 🚨 Troubleshooting
 
-### Build Failures
-```bash
-# Check build locally
-npm run build:netlify
+### Common Issues
 
-# Common issues:
-# - Missing environment variables
-# - TypeScript errors
-# - Dependency issues
-```
+#### Build Failures
+- **Check Node version**: Must be 18+
+- **Check dependencies**: All packages installed
+- **Check environment variables**: Required vars set
 
-### Function Errors
-- Check Netlify Functions logs
-- Verify API routes are working
-- Test endpoints individually
+#### API Routes Not Working
+- **Check redirects**: API routes properly configured
+- **Check functions**: Netlify Functions enabled
+- **Check logs**: Monitor function execution
 
-### PesaPal Integration Issues
-- Verify credentials are correct
-- Check webhook URLs
-- Ensure HTTPS is enabled
-- Test with small amounts first
+#### Payment Issues
+- **Check credentials**: PesaPal credentials valid
+- **Check callback URL**: Properly configured
+- **Check phone format**: Use +254 format
+- **Check amount**: Minimum amount requirements
+
+### Debug Steps
+1. **Check Netlify logs** for build errors
+2. **Check function logs** for API errors
+3. **Test locally** with same environment
+4. **Verify credentials** in PesaPal dashboard
+5. **Check network requests** in browser dev tools
 
 ## 📊 Monitoring
 
 ### Netlify Analytics
-- Enable Netlify Analytics
-- Monitor site performance
-- Track user behavior
+- **Site visits** and performance
+- **Function execution** logs
+- **Error rates** and debugging
+- **Build status** and history
 
-### Function Monitoring
-- Monitor API call success rates
-- Track payment completion rates
-- Set up alerts for failures
+### Payment Monitoring
+- **Payment success rates**
+- **Error patterns**
+- **Callback processing**
+- **User experience**
 
-## 🔄 Continuous Deployment
+## 🔄 Updates and Maintenance
 
-### Automatic Deploys
-- Push to main branch triggers deploy
-- Preview deploys for pull requests
-- Rollback to previous deployments
+### Deploying Updates
+1. **Push changes** to GitHub
+2. **Netlify auto-deploys** from main branch
+3. **Monitor build** and deployment
+4. **Test functionality** after deployment
 
-### Environment Management
-- Use Netlify's environment variable system
-- Different values for different branches
-- Secure credential management
-
-## 🆘 Support Resources
-
-- **Netlify Docs**: [docs.netlify.com](https://docs.netlify.com)
-- **Next.js on Netlify**: [docs.netlify.com/integrations/frameworks/nextjs](https://docs.netlify.com/integrations/frameworks/nextjs)
-- **PesaPal Support**: [support@pesapal.com](mailto:support@pesapal.com)
-
-## 📋 Deployment Checklist
-
-### Pre-Deployment
-- [ ] Code pushed to GitHub
-- [ ] Environment variables configured
-- [ ] PesaPal credentials obtained
-- [ ] Build tested locally
-
-### Post-Deployment
-- [ ] Site loads correctly
-- [ ] Payment flow works
-- [ ] Webhooks configured
-- [ ] SSL certificate active
-- [ ] Custom domain (if applicable)
-
-### Monitoring
-- [ ] Analytics enabled
-- [ ] Error tracking set up
-- [ ] Performance monitoring
-- [ ] Payment success rates tracked
+### Environment Updates
+1. **Update variables** in Netlify dashboard
+2. **Redeploy** if needed
+3. **Test changes** thoroughly
+4. **Monitor logs** for issues
 
 ---
 
-## 🎯 Quick Commands
+## 🎯 Quick Checklist
 
-```bash
-# Test build locally
-npm run build:netlify
+- [ ] Repository connected to Netlify
+- [ ] Build settings configured
+- [ ] Environment variables set
+- [ ] Site deployed successfully
+- [ ] Payment demo accessible
+- [ ] API routes working
+- [ ] PesaPal credentials configured (optional)
+- [ ] Callback URL set in PesaPal dashboard
+- [ ] SSL certificate active
+- [ ] Domain configured (optional)
 
-# Check environment
-npm run test:production
-
-# Deploy to Netlify
-# (Done through Netlify dashboard)
-```
-
-Your Loan Hub application is now ready for Netlify deployment! 🚀
+Your STK Push payment system is now ready for production! 🚀
