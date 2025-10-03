@@ -5,8 +5,9 @@
 
 import { useSearchParams } from 'next/navigation'
 
-// Force dynamic rendering
+// Force dynamic rendering to prevent prerendering issues
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export default function LoanPaymentErrorPage() {
   const searchParams = useSearchParams()
