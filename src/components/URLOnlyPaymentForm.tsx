@@ -81,28 +81,50 @@ export function URLOnlyPaymentForm({
         description: `Processing fee payment for loan ${loanId.slice(-8)}`
       }
 
-      // Create payment URL with fallback to mock service
+      // Create payment URL using the new loan payment API
       let result: any
       try {
-        console.log('Attempting to create payment URL with real Pesapal service...')
-        result = await pesapalURLService.createPaymentURL(paymentRequest)
-        console.log('Real Pesapal service result:', result)
+        console.log('Creating payment URL using loan payment API...')
         
-        // If the real service fails, try mock service
-        if (!result.success) {
-          console.warn('Real Pesapal API failed, using mock service. Error:', result.error)
-          result = await mockPesapalURLService.createPaymentURL(paymentRequest)
-          console.log('Mock service result:', result)
+        const response = await fetch('/api/loan-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            customer_phone: data.phone_number,
+            loan_amount: processingFeeAmount,
+            loan_reference: loanId,
+            payment_type: 'processing_fee',
+            customer_name: 'Loan Applicant'
+          })
+        })
+
+        const apiResult = await response.json()
+        console.log('Loan payment API result:', apiResult)
+
+        if (apiResult.success) {
+          // Transform the response to match expected format
+          result = {
+            success: true,
+            paymentUrl: apiResult.data.redirectUrl,
+            orderTrackingId: apiResult.data.orderTrackingId,
+            merchantReference: apiResult.data.loanReference,
+            amount: apiResult.data.amount,
+            phoneNumber: data.phone_number,
+            paymentMethod: apiResult.data.paymentMethod,
+            loanId: loanId,
+            userId: userId,
+            status: 'pending',
+            initiatedAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
+          }
+        } else {
+          throw new Error(apiResult.error || 'Failed to create payment URL')
         }
       } catch (error) {
-        console.warn('Real Pesapal API threw exception, using mock service:', error)
-        try {
-          result = await mockPesapalURLService.createPaymentURL(paymentRequest)
-          console.log('Mock service result after exception:', result)
-        } catch (mockError) {
-          console.error('Both real and mock services failed:', mockError)
-          throw new Error('Payment service unavailable. Please try again later.')
-        }
+        console.error('Loan payment API failed:', error)
+        throw new Error('Payment service unavailable. Please try again later.')
       }
 
       if (!result.success) {
@@ -117,29 +139,7 @@ export function URLOnlyPaymentForm({
 
       // Start polling for payment status if we have an order tracking ID
       if (result.orderTrackingId) {
-        const service = result.paymentUrl?.includes('mock') ? mockPesapalURLService : pesapalURLService
-        await service.pollPaymentStatus(
-          result.orderTrackingId,
-          (status) => {
-            setCurrentPaymentStatus(status)
-            
-            if (status.status === 'completed') {
-              setPaymentStatus('completed')
-              toast.success('Payment completed successfully!')
-              onPaymentSuccess({
-                paymentId: result.paymentId,
-                orderTrackingId: result.orderTrackingId,
-                amount: processingFeeAmount,
-                status: 'completed'
-              })
-            } else if (status.status === 'failed') {
-              setPaymentStatus('failed')
-              toast.error('Payment failed. Please try again.')
-              onPaymentError('Payment failed. Please try again.')
-            }
-          },
-          300000 // 5 minutes timeout
-        )
+        pollPaymentStatus(result.orderTrackingId)
       }
 
     } catch (error: any) {
@@ -152,9 +152,61 @@ export function URLOnlyPaymentForm({
     }
   }
 
+  const pollPaymentStatus = async (orderTrackingId: string) => {
+    const maxAttempts = 30 // 5 minutes with 10-second intervals
+    let attempts = 0
+
+    const poll = async () => {
+      try {
+        attempts++
+        console.log(`Polling payment status (attempt ${attempts}/${maxAttempts})...`)
+
+        const response = await fetch(`/api/loan-payment?orderTrackingId=${orderTrackingId}`)
+        const result = await response.json()
+
+        if (result.success) {
+          setCurrentPaymentStatus(result)
+          
+          if (result.status === 'COMPLETED') {
+            setPaymentStatus('completed')
+            toast.success('Payment completed successfully!')
+            onPaymentSuccess({
+              orderTrackingId: result.order_tracking_id,
+              amount: result.amount,
+              status: 'completed'
+            })
+            return
+          } else if (result.status === 'FAILED') {
+            setPaymentStatus('failed')
+            toast.error('Payment failed. Please try again.')
+            onPaymentError('Payment failed. Please try again.')
+            return
+          }
+        }
+
+        // Continue polling if not completed/failed and within attempts limit
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 10000) // Poll every 10 seconds
+        } else {
+          console.log('Payment status polling timeout')
+          toast.error('Payment status check timeout. Please check manually.')
+        }
+      } catch (error) {
+        console.error('Payment status polling error:', error)
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 10000) // Retry after 10 seconds
+        } else {
+          toast.error('Failed to check payment status')
+        }
+      }
+    }
+
+    poll()
+  }
+
   const handleOpenPaymentURL = () => {
     if (paymentUrl) {
-      pesapalURLService.openPaymentURL(paymentUrl)
+      window.open(paymentUrl, '_blank')
       toast.info('Payment page opened in new window. Complete payment there.')
     }
   }
