@@ -76,8 +76,6 @@ export interface PaymentConfig {
   baseUrl: string
   consumerKey: string
   consumerSecret: string
-  passKey: string
-  shortCode: string
   environment: 'sandbox' | 'production'
 }
 

@@ -22,8 +22,6 @@ class STKPushService implements PaymentService {
           : 'https://cybqa.pesapal.com/pesapalapi/api'),
       consumerKey: config?.consumerKey || process.env.PESAPAL_CONSUMER_KEY || '',
       consumerSecret: config?.consumerSecret || process.env.PESAPAL_CONSUMER_SECRET || '',
-      passKey: config?.passKey || process.env.PESAPAL_PASS_KEY || '',
-      shortCode: config?.shortCode || process.env.PESAPAL_SHORT_CODE || '',
       environment: config?.environment || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox')
     }
 
@@ -90,15 +88,6 @@ class STKPushService implements PaymentService {
   }
 
   /**
-   * Generate password for STK Push
-   */
-  private generatePassword(): string {
-    const timestamp = this.generateTimestamp()
-    const password = Buffer.from(`${this.config.shortCode}${this.config.passKey}${timestamp}`).toString('base64')
-    return password
-  }
-
-  /**
    * Format phone number for PesaPal
    */
   private formatPhoneNumber(phoneNumber: string): string {
@@ -116,21 +105,35 @@ class STKPushService implements PaymentService {
   }
 
   /**
-   * Initiate STK Push payment
+   * Initiate PesaPal payment
    */
   async initiatePayment(request: PaymentRequest): Promise<PaymentResponse> {
     try {
       const token = await this.getAccessToken()
-      const timestamp = this.generateTimestamp()
-      const password = this.generatePassword()
       const formattedPhone = this.formatPhoneNumber(request.phoneNumber)
 
-      const stkPushRequest: STKPushRequest = {
+      // Create payment order data for PesaPal
+      const orderData = {
+        id: request.id,
+        currency: request.currency,
         amount: request.amount,
-        phoneNumber: formattedPhone,
-        accountReference: request.id,
-        transactionDesc: request.description,
-        callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payment/callback`
+        description: request.description,
+        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/callback`,
+        notification_id: request.id,
+        billing_address: {
+          phone_number: formattedPhone,
+          email_address: request.customerEmail || 'customer@example.com',
+          country_code: 'KE',
+          first_name: request.customerName || 'Customer',
+          middle_name: '',
+          last_name: 'User',
+          line_1: 'Nairobi, Kenya',
+          line_2: '',
+          city: 'Nairobi',
+          state: 'Nairobi',
+          postal_code: '00100',
+          zip_code: '00100'
+        }
       }
 
       const response = await fetch(`${this.config.baseUrl}/Transactions/SubmitOrderRequest`, {
@@ -140,33 +143,12 @@ class STKPushService implements PaymentService {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          id: request.id,
-          currency: request.currency,
-          amount: stkPushRequest.amount,
-          description: stkPushRequest.transactionDesc,
-          callback_url: stkPushRequest.callbackURL,
-          notification_id: request.id,
-          billing_address: {
-            phone_number: stkPushRequest.phoneNumber,
-            email_address: request.customerEmail || 'customer@example.com',
-            country_code: 'KE',
-            first_name: request.customerName || 'Customer',
-            middle_name: '',
-            last_name: 'User',
-            line_1: 'Nairobi, Kenya',
-            line_2: '',
-            city: 'Nairobi',
-            state: 'Nairobi',
-            postal_code: '00100',
-            zip_code: '00100'
-          }
-        })
+        body: JSON.stringify(orderData)
       })
 
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`STK Push failed: ${response.status} - ${errorText}`)
+        throw new Error(`PesaPal payment failed: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
@@ -177,11 +159,11 @@ class STKPushService implements PaymentService {
         orderTrackingId: data.order_tracking_id || request.id,
         merchantReference: request.id,
         status: 'pending',
-        message: 'STK Push initiated successfully. Please check your phone and enter your PIN.'
+        message: 'Payment initiated successfully. Please check your phone and enter your PIN.'
       }
 
     } catch (error) {
-      console.error('STK Push initiation failed:', error)
+      console.error('Payment initiation failed:', error)
       return {
         success: false,
         paymentId: request.id,
