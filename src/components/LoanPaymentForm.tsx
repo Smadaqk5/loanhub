@@ -99,10 +99,12 @@ export function LoanPaymentForm({ onPaymentSuccess, onPaymentError }: LoanPaymen
 
       if (result.success) {
         console.log('✅ Loan payment created successfully:', result.data)
+        console.log('🔍 Payment result data:', JSON.stringify(result.data, null, 2))
         setPaymentResult(result.data)
         onPaymentSuccess?.(result.data)
       } else {
         console.error('❌ Loan payment failed:', result.error)
+        console.log('🔍 Full error response:', JSON.stringify(result, null, 2))
         onPaymentError?.(result.error)
       }
     } catch (error: any) {
@@ -138,10 +140,12 @@ export function LoanPaymentForm({ onPaymentSuccess, onPaymentError }: LoanPaymen
 
       if (result.success) {
         console.log('✅ Direct loan payment created successfully:', result.data)
+        console.log('🔍 Direct payment result data:', JSON.stringify(result.data, null, 2))
         setPaymentResult(result.data)
         onPaymentSuccess?.(result.data)
       } else {
         console.error('❌ Direct loan payment failed:', result.error)
+        console.log('🔍 Direct payment error response:', JSON.stringify(result, null, 2))
         onPaymentError?.(result.error)
       }
     } catch (error: any) {
@@ -322,14 +326,40 @@ export function LoanPaymentForm({ onPaymentSuccess, onPaymentError }: LoanPaymen
             <p><strong>Amount:</strong> KES {paymentResult.amount?.toLocaleString()}</p>
             <p><strong>Payment Method:</strong> {paymentResult.paymentMethod}</p>
             <p><strong>Mobile Optimized:</strong> {paymentResult.mobileOptimized ? 'Yes' : 'No'}</p>
+            <p><strong>Redirect URL:</strong> {paymentResult.redirectUrl ? 'Available' : 'Not available'}</p>
           </div>
 
-          <button
-            onClick={openPaymentUrl}
-            className="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 font-medium"
-          >
-            📱 Open Payment Page
-          </button>
+          {paymentResult.redirectUrl ? (
+            <button
+              onClick={openPaymentUrl}
+              className="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 font-medium"
+            >
+              📱 Open Payment Page
+            </button>
+          ) : (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-yellow-800 text-sm">
+                ⚠️ Payment URL not available. Please check the console for details.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Debug Information */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <h4 className="font-semibold text-gray-800 mb-2">🔍 Debug Information</h4>
+          <div className="text-xs text-gray-600 space-y-1">
+            <p><strong>Payment Result:</strong> {paymentResult ? 'Set' : 'Not set'}</p>
+            <p><strong>Is Loading:</strong> {isLoading ? 'Yes' : 'No'}</p>
+            {paymentResult && (
+              <>
+                <p><strong>Has Redirect URL:</strong> {paymentResult.redirectUrl ? 'Yes' : 'No'}</p>
+                <p><strong>Redirect URL:</strong> {paymentResult.redirectUrl || 'None'}</p>
+              </>
+            )}
+          </div>
         </div>
       )}
 
