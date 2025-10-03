@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Set output directory to avoid path issues
+  distDir: '.next',
+  
   // Enable image optimization
   images: {
     domains: ['localhost'],
@@ -31,11 +34,18 @@ const nextConfig = {
       };
     }
     
+    // Fix for Windows paths with exclamation marks
+    config.cache = {
+      ...config.cache,
+      cacheDirectory: config.cache?.cacheDirectory?.replace(/!/g, '') || 'node_modules/.cache/webpack',
+    };
+    
     // Ignore path-related warnings
     config.ignoreWarnings = [
       /Failed to parse source map/,
       /Critical dependency: the request of a dependency is an expression/,
       /Module not found: Can't resolve/,
+      /contains exclamation mark/,
     ];
     
     return config;
