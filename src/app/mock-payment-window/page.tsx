@@ -4,6 +4,10 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export default function MockPaymentWindow() {
   const searchParams = useSearchParams()
   const paymentId = searchParams.get('paymentId')

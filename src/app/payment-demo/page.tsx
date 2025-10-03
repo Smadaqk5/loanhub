@@ -7,6 +7,9 @@ import { PaymentStatusComponent } from '@/components/PaymentStatusComponent'
 import { PaymentStatus } from '@/types/payment'
 import { paymentServiceFactory } from '@/services/payment-service-factory'
 
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic'
+
 export default function PaymentDemoPage() {
   const [currentPayment, setCurrentPayment] = useState<PaymentStatus | null>(null)
   const [showStatus, setShowStatus] = useState(false)
