@@ -4,6 +4,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loanhubPesapalService, LoanPaymentData } from '@/lib/loanhub-pesapal-service'
 
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function POST(req: NextRequest) {
   try {
     console.log('🏦 Loan payment request received')

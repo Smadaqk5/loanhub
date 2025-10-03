@@ -15,17 +15,7 @@
   # Build environment
   NODE_ENV = "production"
 
-# Redirect rules for Next.js API routes
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-# Fallback for SPA routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# No redirects needed - Next.js handles routing automatically
 
 # Headers for security
 [[headers]]
@@ -42,10 +32,7 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# API routes configuration
-[functions]
-  # Enable Netlify Functions for API routes
-  directory = ".netlify/functions"
+# Next.js API routes are handled automatically
 
 # Build plugins
 [[plugins]]
